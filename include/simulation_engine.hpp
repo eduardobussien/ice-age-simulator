@@ -1,30 +1,48 @@
 #pragma once
 
 #include <cstddef>
+#include <vector>
 
 #include "climate_grid.hpp"
+#include "simulation_params.hpp"
 
 namespace iceage {
 
-// Advances a ClimateGrid through discrete time steps of length dt.
+// Advances a ClimateGrid through discrete time steps of length params.dt.
 //
-// The dynamics here are intentionally a placeholder: this scaffold exists to
-// prove the C++/pybind11/NumPy loop end to end. Real temperature, ice-sheet,
-// and albedo-feedback physics replace SimulationEngine::step() next.
+// Temperature model (this feature):
+//   * latitudinal insolation via the 2nd-Legendre EBM form,
+//   * a secular global-mean cooling trend, and
+//   * per-cell relaxation toward the local equilibrium temperature.
+// Ice-sheet growth and albedo feedback are added as later features.
 class SimulationEngine {
 public:
-    explicit SimulationEngine(ClimateGrid& grid, double dt = 1.0);
+    explicit SimulationEngine(ClimateGrid& grid, const Params& params = Params{});
 
-    // Advance one temporal iteration of length dt.
+    // Replace the parameters and rebuild cached latitude tables.
+    void set_params(const Params& params);
+    const Params& params() const noexcept { return params_; }
+
+    // Set every cell to the equilibrium temperature at the current time.
+    // Use once to start a run "at rest" with the latitudinal profile in place.
+    void seed_equilibrium();
+
+    // Advance one temporal iteration of length params.dt.
     void step();
 
     std::size_t iteration() const noexcept { return iteration_; }
-    double dt() const noexcept { return dt_; }
+    double time() const noexcept { return static_cast<double>(iteration_) * params_.dt; }
 
 private:
+    // Global-mean equilibrium temperature at time t (secular cooling).
+    double global_equilibrium(double t) const noexcept;
+    // Precompute per-row latitudinal temperature offset + insolation field.
+    void build_lat_tables();
+
     ClimateGrid& grid_;
-    double dt_;
+    Params params_;
     std::size_t iteration_ = 0;
+    std::vector<double> row_offset_;  // latitudinal dT per row (size = rows)
 };
 
 } // namespace iceage

@@ -1,8 +1,11 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
 
+#include <string>
+
 #include "climate_grid.hpp"
 #include "simulation_engine.hpp"
+#include "simulation_params.hpp"
 
 namespace py = pybind11;
 using namespace iceage;
@@ -57,11 +60,31 @@ PYBIND11_MODULE(_core, m) {
             return view(self, g.albedo(), g.rows(), g.cols());
         });
 
+    py::class_<Params>(m, "Params")
+        .def(py::init<>())
+        .def_readwrite("dt", &Params::dt)
+        .def_readwrite("t0_global", &Params::t0_global)
+        .def_readwrite("cooling_rate", &Params::cooling_rate)
+        .def_readwrite("lat_gradient", &Params::lat_gradient)
+        .def_readwrite("relax_time", &Params::relax_time)
+        .def_readwrite("s2", &Params::s2)
+        .def("__repr__", [](const Params& p) {
+            return "Params(dt=" + std::to_string(p.dt) +
+                   ", t0_global=" + std::to_string(p.t0_global) +
+                   ", cooling_rate=" + std::to_string(p.cooling_rate) +
+                   ", lat_gradient=" + std::to_string(p.lat_gradient) +
+                   ", relax_time=" + std::to_string(p.relax_time) +
+                   ", s2=" + std::to_string(p.s2) + ")";
+        });
+
     py::class_<SimulationEngine>(m, "SimulationEngine")
-        .def(py::init<ClimateGrid&, double>(),
-             py::arg("grid"), py::arg("dt") = 1.0,
+        .def(py::init<ClimateGrid&, const Params&>(),
+             py::arg("grid"), py::arg("params") = Params{},
              py::keep_alive<1, 2>())  // engine keeps its grid alive
+        .def("seed_equilibrium", &SimulationEngine::seed_equilibrium)
         .def("step", &SimulationEngine::step)
+        .def("set_params", &SimulationEngine::set_params, py::arg("params"))
+        .def_property_readonly("params", &SimulationEngine::params)
         .def_property_readonly("iteration", &SimulationEngine::iteration)
-        .def_property_readonly("dt", &SimulationEngine::dt);
+        .def_property_readonly("time", &SimulationEngine::time);
 }
