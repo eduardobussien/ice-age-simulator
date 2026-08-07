@@ -1,0 +1,21 @@
+# --- Build artifacts ---
+/build/
+*.pyd
+*.so
+*.o
+*.obj
+*.lib
+*.exp
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# --- IDE / OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,13 @@
+# Runtime + build dependencies for the Ice Age Simulator.
+# Build also requires a C++17 compiler (MSVC Build Tools on Windows) and CMake.
+
+# --- Build toolchain (Python side) ---
+pybind11>=2.12
+cmake>=3.18
+
+# --- Simulation / analysis ---
+numpy>=1.24
+
+# --- Visualization ---
+matplotlib>=3.7
+cartopy>=0.22   # map projections; needs GEOS/PROJ wheels (pip pulls these on Win)
