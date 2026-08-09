@@ -34,14 +34,16 @@ def heatmap(ax, field: np.ndarray, title: str, cmap: str, label: str,
 
 
 def snapshot(grid, path, temp_title: str = "Surface temperature"):
-    """Render temperature + insolation side by side and save to `path`."""
+    """Render temperature + ice + insolation side by side and save to `path`."""
     T = np.asarray(grid.T)
+    Ice = np.asarray(grid.ice)
     S = np.asarray(grid.solar)
 
-    fig, (ax_t, ax_s) = plt.subplots(1, 2, figsize=(14, 4.5))
-    # Diverging map centered near 0 C reads temperature intuitively.
-    tmax = float(np.abs(T).max())
+    fig, (ax_t, ax_i, ax_s) = plt.subplots(1, 3, figsize=(19, 4.5))
+    # Diverging map centered on 0 C reads temperature intuitively.
+    tmax = float(np.abs(T).max()) or 1.0
     heatmap(ax_t, T, temp_title, "coolwarm", "T (C)", vmin=-tmax, vmax=tmax)
+    heatmap(ax_i, Ice, "Ice thickness", "Blues", "ice (m)", vmin=0.0)
     heatmap(ax_s, S, "Insolation (annual mean)", "inferno", "S / S_global")
 
     fig.tight_layout()
@@ -59,11 +61,11 @@ def _demo() -> None:
     grid = ClimateGrid(rows, cols)
     engine = SimulationEngine(grid, Params())
     engine.seed_equilibrium()
-    for _ in range(50):
+    for _ in range(200):
         engine.step()
 
     out = snapshot(
-        grid, "figures/state_t50.png",
+        grid, f"figures/state_t{engine.time:.0f}.png",
         temp_title=f"Surface temperature (t={engine.time:.0f})",
     )
     print(f"saved {out.resolve()}")

@@ -12,6 +12,12 @@ struct Params {
     double lat_gradient = 70.0;  // equator-to-pole temperature scaling (C)
     double relax_time = 5.0;     // relaxation timescale toward equilibrium (time units)
     double s2 = -0.48;           // 2nd-Legendre insolation coefficient (EBM)
+
+    // Ice-sheet mass balance.
+    double t_freeze = 0.0;       // ice accumulates below this temperature (C)
+    double accum_rate = 100.0;   // max ice accumulation rate (thickness per time)
+    double melt_rate = 50.0;     // melt rate per degree above freezing (thickness/C/time)
+    double ice_max = 3000.0;     // saturation ice thickness (~metres)
 };
 
 } // namespace iceage

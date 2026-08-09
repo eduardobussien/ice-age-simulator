@@ -10,11 +10,12 @@ namespace iceage {
 
 // Advances a ClimateGrid through discrete time steps of length params.dt.
 //
-// Temperature model (this feature):
+// Model so far:
 //   * latitudinal insolation via the 2nd-Legendre EBM form,
-//   * a secular global-mean cooling trend, and
-//   * per-cell relaxation toward the local equilibrium temperature.
-// Ice-sheet growth and albedo feedback are added as later features.
+//   * a secular global-mean cooling trend,
+//   * per-cell relaxation toward the local equilibrium temperature, and
+//   * ice-sheet mass balance (saturating accumulation / temperature-driven melt).
+// Albedo feedback is added as a later feature.
 class SimulationEngine {
 public:
     explicit SimulationEngine(ClimateGrid& grid, const Params& params = Params{});

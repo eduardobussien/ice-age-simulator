@@ -70,17 +70,40 @@ void SimulationEngine::step() {
     const std::size_t cols = grid_.cols();
     double* T = grid_.temperature();
 
+    double* I = grid_.ice();
+
     // Global mean at the end of this step.
     const double t_ref = global_equilibrium(time() + params_.dt);
     // Exact relaxation factor for a constant target over dt: unconditionally
     // stable, unlike raw forward Euler which can overshoot when dt > relax_time.
     const double k = 1.0 - std::exp(-params_.dt / params_.relax_time);
+    const double dt = params_.dt;
+    const bool saturating = params_.ice_max > 0.0;
 
     for (std::size_t i = 0; i < rows; ++i) {
         const double t_eq = t_ref + row_offset_[i];
         double* trow = T + i * cols;
+        double* irow = I + i * cols;
         for (std::size_t j = 0; j < cols; ++j) {
+            // 1) Relax temperature toward its local equilibrium.
             trow[j] += (t_eq - trow[j]) * k;
+
+            // 2) Ice mass balance driven by the updated temperature.
+            const double temp = trow[j];
+            double ice = irow[j];
+            if (temp < params_.t_freeze) {
+                const double head = saturating ? (1.0 - ice / params_.ice_max)
+                                               : 1.0;
+                ice += params_.accum_rate * head * dt;
+            } else {
+                ice -= params_.melt_rate * (temp - params_.t_freeze) * dt;
+            }
+            if (ice < 0.0) {
+                ice = 0.0;
+            } else if (saturating && ice > params_.ice_max) {
+                ice = params_.ice_max;
+            }
+            irow[j] = ice;
         }
     }
 

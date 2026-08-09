@@ -1,4 +1,4 @@
-"""End-to-end smoke test of the temperature step function.
+"""End-to-end smoke test: temperature step + ice-sheet growth.
 
 Run from the repo root once the extension is built:
 
@@ -25,29 +25,34 @@ def main() -> None:
 
     params = Params()                         # modern-Earth-ish defaults
     engine = SimulationEngine(grid, params)
-    engine.seed_equilibrium()                 # start "at rest" with lat profile
+    engine.seed_equilibrium()                 # start "at rest", ice-free
 
     T = grid.T                                # zero-copy views onto C++ memory
-    S = grid.solar
+    Ice = grid.ice
     w = area_weights(rows, cols)
-    pole, equator = 0, rows // 2
+    w_sum = w.sum()
 
     def gmean(field: np.ndarray) -> float:
         return float(np.average(field, weights=w))
 
+    def ice_cover(field: np.ndarray) -> float:
+        """Area-weighted fraction of the surface with appreciable ice."""
+        return float((w * (field > 1.0)).sum() / w_sum)
+
     print(f"core v{__version__}")
-    print(f"insolation  min={S.min():.3f}  max={S.max():.3f}  "
-          f"area-mean={gmean(S):.3f}   (normalized to ~1.0)")
-    print(f"t={engine.time:5.0f}  pole={T[pole].mean():7.2f}  "
-          f"equator={T[equator].mean():7.2f}  global={gmean(T):7.2f}")
 
-    for _ in range(50):
-        engine.step()
+    def report() -> None:
+        print(f"t={engine.time:5.0f}  global={gmean(T):6.2f} C   "
+              f"ice cover={ice_cover(Ice) * 100:5.1f}%   "
+              f"max ice={Ice.max():7.1f} m")
 
-    print(f"t={engine.time:5.0f}  pole={T[pole].mean():7.2f}  "
-          f"equator={T[equator].mean():7.2f}  global={gmean(T):7.2f}")
-    print(f"global mean cooled {params.cooling_rate * engine.time:.2f} C "
-          f"over {engine.iteration} steps  (poles stay colder than equator)")
+    report()
+    for _ in range(4):
+        for _ in range(50):
+            engine.step()
+        report()
+
+    print("ice grows from the poles equatorward as the world cools")
 
 
 if __name__ == "__main__":

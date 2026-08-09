@@ -68,13 +68,21 @@ PYBIND11_MODULE(_core, m) {
         .def_readwrite("lat_gradient", &Params::lat_gradient)
         .def_readwrite("relax_time", &Params::relax_time)
         .def_readwrite("s2", &Params::s2)
+        .def_readwrite("t_freeze", &Params::t_freeze)
+        .def_readwrite("accum_rate", &Params::accum_rate)
+        .def_readwrite("melt_rate", &Params::melt_rate)
+        .def_readwrite("ice_max", &Params::ice_max)
         .def("__repr__", [](const Params& p) {
             return "Params(dt=" + std::to_string(p.dt) +
                    ", t0_global=" + std::to_string(p.t0_global) +
                    ", cooling_rate=" + std::to_string(p.cooling_rate) +
                    ", lat_gradient=" + std::to_string(p.lat_gradient) +
                    ", relax_time=" + std::to_string(p.relax_time) +
-                   ", s2=" + std::to_string(p.s2) + ")";
+                   ", s2=" + std::to_string(p.s2) +
+                   ", t_freeze=" + std::to_string(p.t_freeze) +
+                   ", accum_rate=" + std::to_string(p.accum_rate) +
+                   ", melt_rate=" + std::to_string(p.melt_rate) +
+                   ", ice_max=" + std::to_string(p.ice_max) + ")";
         });
 
     py::class_<SimulationEngine>(m, "SimulationEngine")
