@@ -37,14 +37,15 @@ def snapshot(grid, path, temp_title: str = "Surface temperature"):
     """Render temperature + ice + insolation side by side and save to `path`."""
     T = np.asarray(grid.T)
     Ice = np.asarray(grid.ice)
-    S = np.asarray(grid.solar)
+    Alb = np.asarray(grid.albedo)
 
-    fig, (ax_t, ax_i, ax_s) = plt.subplots(1, 3, figsize=(19, 4.5))
+    fig, (ax_t, ax_i, ax_a) = plt.subplots(1, 3, figsize=(19, 4.5))
     # Diverging map centered on 0 C reads temperature intuitively.
     tmax = float(np.abs(T).max()) or 1.0
     heatmap(ax_t, T, temp_title, "coolwarm", "T (C)", vmin=-tmax, vmax=tmax)
     heatmap(ax_i, Ice, "Ice thickness", "Blues", "ice (m)", vmin=0.0)
-    heatmap(ax_s, S, "Insolation (annual mean)", "inferno", "S / S_global")
+    heatmap(ax_a, Alb, "Surface albedo", "cividis", "albedo",
+            vmin=0.0, vmax=1.0)
 
     fig.tight_layout()
     path = Path(path)

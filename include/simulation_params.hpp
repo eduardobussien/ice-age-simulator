@@ -18,6 +18,13 @@ struct Params {
     double accum_rate = 100.0;   // max ice accumulation rate (thickness per time)
     double melt_rate = 50.0;     // melt rate per degree above freezing (thickness/C/time)
     double ice_max = 3000.0;     // saturation ice thickness (~metres)
+
+    // Albedo feedback.
+    double base_albedo = 0.30;      // reflectivity of ice-free surface (0..1)
+    double ice_albedo = 0.60;       // reflectivity of fully ice-covered surface (0..1)
+    double ice_albedo_depth = 100.0;  // ice thickness at which albedo saturates (~metres)
+    double albedo_gain = 60.0;      // LOCAL cooling per unit (albedo x insolation) anomaly (C)
+    double planetary_gain = 80.0;   // GLOBAL cooling per unit planetary-albedo anomaly (C)
 };
 
 } // namespace iceage

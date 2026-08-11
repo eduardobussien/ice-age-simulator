@@ -25,25 +25,63 @@ void SimulationEngine::build_lat_tables() {
     const std::size_t rows = grid_.rows();
     const std::size_t cols = grid_.cols();
     row_offset_.assign(rows, 0.0);
+    row_insol_.assign(rows, 0.0);
+    row_weight_.assign(rows, 0.0);
+    weight_sum_ = 0.0;
 
     double* S = grid_.solar();
+    double* A = grid_.albedo();
     const double dlat = 180.0 / static_cast<double>(rows);  // degrees per row
 
     for (std::size_t i = 0; i < rows; ++i) {
         // Cell-centered latitude; row 0 is the North-pole side (+90).
         const double lat_deg = 90.0 - (static_cast<double>(i) + 0.5) * dlat;
-        const double sin_lat = std::sin(lat_deg * kPi / 180.0);
+        const double lat_rad = lat_deg * kPi / 180.0;
+        const double sin_lat = std::sin(lat_rad);
         // Normalized annual-mean insolation (global mean = 1).
         const double insol = 1.0 + params_.s2 * legendre_p2(sin_lat);
 
         row_offset_[i] = params_.lat_gradient * (insol - 1.0);
+        row_insol_[i] = insol;
+        row_weight_[i] = std::cos(lat_rad);  // cell-area weight
+        weight_sum_ += row_weight_[i];
 
-        // Publish the insolation field for visualization (constant along a row).
         double* srow = S + i * cols;
+        double* arow = A + i * cols;
         for (std::size_t j = 0; j < cols; ++j) {
-            srow[j] = insol;
+            srow[j] = insol;                 // static insolation field (for viz)
+            arow[j] = params_.base_albedo;   // ice-free until ice accumulates
         }
     }
+}
+
+double SimulationEngine::planetary_albedo() const noexcept {
+    const std::size_t rows = grid_.rows();
+    const std::size_t cols = grid_.cols();
+    const double* A = grid_.albedo();
+
+    double weighted = 0.0;
+    for (std::size_t i = 0; i < rows; ++i) {
+        const double* arow = A + i * cols;
+        double row_sum = 0.0;
+        for (std::size_t j = 0; j < cols; ++j) {
+            row_sum += arow[j];
+        }
+        weighted += row_weight_[i] * (row_sum / static_cast<double>(cols));
+    }
+    return (weight_sum_ > 0.0) ? weighted / weight_sum_ : params_.base_albedo;
+}
+
+double SimulationEngine::cell_albedo(double ice) const noexcept {
+    double f;
+    if (params_.ice_albedo_depth > 0.0) {
+        f = ice / params_.ice_albedo_depth;
+    } else {
+        f = (ice > 0.0) ? 1.0 : 0.0;
+    }
+    if (f < 0.0) f = 0.0;
+    else if (f > 1.0) f = 1.0;
+    return params_.base_albedo + (params_.ice_albedo - params_.base_albedo) * f;
 }
 
 double SimulationEngine::global_equilibrium(double t) const noexcept {
@@ -71,9 +109,15 @@ void SimulationEngine::step() {
     double* T = grid_.temperature();
 
     double* I = grid_.ice();
+    double* A = grid_.albedo();
 
-    // Global mean at the end of this step.
-    const double t_ref = global_equilibrium(time() + params_.dt);
+    // Global reference temperature at the end of this step, cooled by the
+    // planetary-albedo feedback (uses the previous step's albedo field: a
+    // stable one-step lag that closes the global energy balance). This is the
+    // channel that lets a growing ice cap advance its own margin equatorward.
+    const double planet_alb = planetary_albedo();
+    const double t_ref = global_equilibrium(time() + params_.dt) -
+        params_.planetary_gain * (planet_alb - params_.base_albedo);
     // Exact relaxation factor for a constant target over dt: unconditionally
     // stable, unlike raw forward Euler which can overshoot when dt > relax_time.
     const double k = 1.0 - std::exp(-params_.dt / params_.relax_time);
@@ -81,14 +125,25 @@ void SimulationEngine::step() {
     const bool saturating = params_.ice_max > 0.0;
 
     for (std::size_t i = 0; i < rows; ++i) {
-        const double t_eq = t_ref + row_offset_[i];
+        const double base_eq = t_ref + row_offset_[i];
+        const double insol = row_insol_[i];
         double* trow = T + i * cols;
         double* irow = I + i * cols;
+        double* arow = A + i * cols;
         for (std::size_t j = 0; j < cols; ++j) {
-            // 1) Relax temperature toward its local equilibrium.
+            // 1) Albedo from the current ice cover.
+            const double alb = cell_albedo(irow[j]);
+            arow[j] = alb;
+
+            // 2) Local equilibrium including the ice-albedo feedback: reflective
+            //    cells absorb less sunlight (weighted by insolation) and cool.
+            const double t_eq = base_eq -
+                params_.albedo_gain * insol * (alb - params_.base_albedo);
+
+            // 3) Relax temperature toward that equilibrium.
             trow[j] += (t_eq - trow[j]) * k;
 
-            // 2) Ice mass balance driven by the updated temperature.
+            // 4) Ice mass balance driven by the updated temperature.
             const double temp = trow[j];
             double ice = irow[j];
             if (temp < params_.t_freeze) {

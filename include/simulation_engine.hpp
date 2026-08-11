@@ -13,9 +13,9 @@ namespace iceage {
 // Model so far:
 //   * latitudinal insolation via the 2nd-Legendre EBM form,
 //   * a secular global-mean cooling trend,
-//   * per-cell relaxation toward the local equilibrium temperature, and
-//   * ice-sheet mass balance (saturating accumulation / temperature-driven melt).
-// Albedo feedback is added as a later feature.
+//   * per-cell relaxation toward the local equilibrium temperature,
+//   * ice-sheet mass balance (saturating accumulation / temperature-driven melt),
+//   * ice-albedo feedback (reflective ice cools its own cell, closing the loop).
 class SimulationEngine {
 public:
     explicit SimulationEngine(ClimateGrid& grid, const Params& params = Params{});
@@ -40,10 +40,18 @@ private:
     // Precompute per-row latitudinal temperature offset + insolation field.
     void build_lat_tables();
 
+    // Per-cell albedo as a function of ice thickness.
+    double cell_albedo(double ice) const noexcept;
+    // Area-weighted (cos-latitude) mean of the current albedo field.
+    double planetary_albedo() const noexcept;
+
     ClimateGrid& grid_;
     Params params_;
     std::size_t iteration_ = 0;
     std::vector<double> row_offset_;  // latitudinal dT per row (size = rows)
+    std::vector<double> row_insol_;   // insolation per row (size = rows)
+    std::vector<double> row_weight_;  // cos(latitude) area weight per row (size = rows)
+    double weight_sum_ = 0.0;         // sum of row_weight_ (per column)
 };
 
 } // namespace iceage

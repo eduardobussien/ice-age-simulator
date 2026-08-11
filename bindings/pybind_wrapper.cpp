@@ -72,6 +72,11 @@ PYBIND11_MODULE(_core, m) {
         .def_readwrite("accum_rate", &Params::accum_rate)
         .def_readwrite("melt_rate", &Params::melt_rate)
         .def_readwrite("ice_max", &Params::ice_max)
+        .def_readwrite("base_albedo", &Params::base_albedo)
+        .def_readwrite("ice_albedo", &Params::ice_albedo)
+        .def_readwrite("ice_albedo_depth", &Params::ice_albedo_depth)
+        .def_readwrite("albedo_gain", &Params::albedo_gain)
+        .def_readwrite("planetary_gain", &Params::planetary_gain)
         .def("__repr__", [](const Params& p) {
             return "Params(dt=" + std::to_string(p.dt) +
                    ", t0_global=" + std::to_string(p.t0_global) +
@@ -82,7 +87,12 @@ PYBIND11_MODULE(_core, m) {
                    ", t_freeze=" + std::to_string(p.t_freeze) +
                    ", accum_rate=" + std::to_string(p.accum_rate) +
                    ", melt_rate=" + std::to_string(p.melt_rate) +
-                   ", ice_max=" + std::to_string(p.ice_max) + ")";
+                   ", ice_max=" + std::to_string(p.ice_max) +
+                   ", base_albedo=" + std::to_string(p.base_albedo) +
+                   ", ice_albedo=" + std::to_string(p.ice_albedo) +
+                   ", ice_albedo_depth=" + std::to_string(p.ice_albedo_depth) +
+                   ", albedo_gain=" + std::to_string(p.albedo_gain) +
+                   ", planetary_gain=" + std::to_string(p.planetary_gain) + ")";
         });
 
     py::class_<SimulationEngine>(m, "SimulationEngine")
