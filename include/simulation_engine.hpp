@@ -34,6 +34,11 @@ public:
     std::size_t iteration() const noexcept { return iteration_; }
     double time() const noexcept { return static_cast<double>(iteration_) * params_.dt; }
 
+    // Global-mean sea-level fall (metres) from total land-ice volume, relative
+    // to the ice-free state. Radius-independent: it depends only on the
+    // area-weighted mean ice thickness, the ocean fraction, and ice density.
+    double sea_level_drop() const noexcept;
+
 private:
     // Global-mean equilibrium temperature at time t (secular cooling).
     double global_equilibrium(double t) const noexcept;

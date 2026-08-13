@@ -25,6 +25,10 @@ struct Params {
     double ice_albedo_depth = 100.0;  // ice thickness at which albedo saturates (~metres)
     double albedo_gain = 60.0;      // LOCAL cooling per unit (albedo x insolation) anomaly (C)
     double planetary_gain = 80.0;   // GLOBAL cooling per unit planetary-albedo anomaly (C)
+
+    // Sea level (derived from total land-ice volume).
+    double ocean_fraction = 0.71;      // fraction of the surface that is ocean
+    double ice_density_ratio = 0.917;  // rho_ice / rho_water (ice -> water volume)
 };
 
 } // namespace iceage

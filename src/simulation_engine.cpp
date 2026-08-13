@@ -72,6 +72,29 @@ double SimulationEngine::planetary_albedo() const noexcept {
     return (weight_sum_ > 0.0) ? weighted / weight_sum_ : params_.base_albedo;
 }
 
+double SimulationEngine::sea_level_drop() const noexcept {
+    const std::size_t rows = grid_.rows();
+    const std::size_t cols = grid_.cols();
+    const double* I = grid_.ice();
+
+    // Area-weighted mean ice thickness over the whole globe (all ice treated
+    // as grounded land ice: the toy has no land/ocean mask).
+    double weighted = 0.0;
+    for (std::size_t i = 0; i < rows; ++i) {
+        const double* irow = I + i * cols;
+        double row_sum = 0.0;
+        for (std::size_t j = 0; j < cols; ++j) {
+            row_sum += irow[j];
+        }
+        weighted += row_weight_[i] * (row_sum / static_cast<double>(cols));
+    }
+    if (weight_sum_ <= 0.0 || params_.ocean_fraction <= 0.0) {
+        return 0.0;
+    }
+    const double mean_ice = weighted / weight_sum_;
+    return params_.ice_density_ratio * mean_ice / params_.ocean_fraction;
+}
+
 double SimulationEngine::cell_albedo(double ice) const noexcept {
     double f;
     if (params_.ice_albedo_depth > 0.0) {

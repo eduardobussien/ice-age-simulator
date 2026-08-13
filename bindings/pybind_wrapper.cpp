@@ -77,6 +77,8 @@ PYBIND11_MODULE(_core, m) {
         .def_readwrite("ice_albedo_depth", &Params::ice_albedo_depth)
         .def_readwrite("albedo_gain", &Params::albedo_gain)
         .def_readwrite("planetary_gain", &Params::planetary_gain)
+        .def_readwrite("ocean_fraction", &Params::ocean_fraction)
+        .def_readwrite("ice_density_ratio", &Params::ice_density_ratio)
         .def("__repr__", [](const Params& p) {
             return "Params(dt=" + std::to_string(p.dt) +
                    ", t0_global=" + std::to_string(p.t0_global) +
@@ -92,7 +94,9 @@ PYBIND11_MODULE(_core, m) {
                    ", ice_albedo=" + std::to_string(p.ice_albedo) +
                    ", ice_albedo_depth=" + std::to_string(p.ice_albedo_depth) +
                    ", albedo_gain=" + std::to_string(p.albedo_gain) +
-                   ", planetary_gain=" + std::to_string(p.planetary_gain) + ")";
+                   ", planetary_gain=" + std::to_string(p.planetary_gain) +
+                   ", ocean_fraction=" + std::to_string(p.ocean_fraction) +
+                   ", ice_density_ratio=" + std::to_string(p.ice_density_ratio) + ")";
         });
 
     py::class_<SimulationEngine>(m, "SimulationEngine")
@@ -104,5 +108,6 @@ PYBIND11_MODULE(_core, m) {
         .def("set_params", &SimulationEngine::set_params, py::arg("params"))
         .def_property_readonly("params", &SimulationEngine::params)
         .def_property_readonly("iteration", &SimulationEngine::iteration)
-        .def_property_readonly("time", &SimulationEngine::time);
+        .def_property_readonly("time", &SimulationEngine::time)
+        .def_property_readonly("sea_level_drop", &SimulationEngine::sea_level_drop);
 }
