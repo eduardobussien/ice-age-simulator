@@ -28,9 +28,11 @@ void SimulationEngine::build_lat_tables() {
     row_insol_.assign(rows, 0.0);
     row_weight_.assign(rows, 0.0);
     weight_sum_ = 0.0;
+    co2_ = params_.co2_base;
 
     double* S = grid_.solar();
     double* A = grid_.albedo();
+    double* C = grid_.co2();
     const double dlat = 180.0 / static_cast<double>(rows);  // degrees per row
 
     for (std::size_t i = 0; i < rows; ++i) {
@@ -48,50 +50,48 @@ void SimulationEngine::build_lat_tables() {
 
         double* srow = S + i * cols;
         double* arow = A + i * cols;
+        double* crow = C + i * cols;
         for (std::size_t j = 0; j < cols; ++j) {
             srow[j] = insol;                 // static insolation field (for viz)
             arow[j] = params_.base_albedo;   // ice-free until ice accumulates
+            crow[j] = co2_;                  // well-mixed CO2 (uniform field)
         }
     }
+}
+
+double SimulationEngine::area_weighted_mean(const double* field) const noexcept {
+    const std::size_t rows = grid_.rows();
+    const std::size_t cols = grid_.cols();
+    if (weight_sum_ <= 0.0) {
+        return 0.0;
+    }
+    double weighted = 0.0;
+    for (std::size_t i = 0; i < rows; ++i) {
+        const double* frow = field + i * cols;
+        double row_sum = 0.0;
+        for (std::size_t j = 0; j < cols; ++j) {
+            row_sum += frow[j];
+        }
+        weighted += row_weight_[i] * (row_sum / static_cast<double>(cols));
+    }
+    return weighted / weight_sum_;
 }
 
 double SimulationEngine::planetary_albedo() const noexcept {
-    const std::size_t rows = grid_.rows();
-    const std::size_t cols = grid_.cols();
-    const double* A = grid_.albedo();
+    return area_weighted_mean(grid_.albedo());
+}
 
-    double weighted = 0.0;
-    for (std::size_t i = 0; i < rows; ++i) {
-        const double* arow = A + i * cols;
-        double row_sum = 0.0;
-        for (std::size_t j = 0; j < cols; ++j) {
-            row_sum += arow[j];
-        }
-        weighted += row_weight_[i] * (row_sum / static_cast<double>(cols));
-    }
-    return (weight_sum_ > 0.0) ? weighted / weight_sum_ : params_.base_albedo;
+double SimulationEngine::global_temperature() const noexcept {
+    return area_weighted_mean(grid_.temperature());
 }
 
 double SimulationEngine::sea_level_drop() const noexcept {
-    const std::size_t rows = grid_.rows();
-    const std::size_t cols = grid_.cols();
-    const double* I = grid_.ice();
-
-    // Area-weighted mean ice thickness over the whole globe (all ice treated
-    // as grounded land ice: the toy has no land/ocean mask).
-    double weighted = 0.0;
-    for (std::size_t i = 0; i < rows; ++i) {
-        const double* irow = I + i * cols;
-        double row_sum = 0.0;
-        for (std::size_t j = 0; j < cols; ++j) {
-            row_sum += irow[j];
-        }
-        weighted += row_weight_[i] * (row_sum / static_cast<double>(cols));
-    }
-    if (weight_sum_ <= 0.0 || params_.ocean_fraction <= 0.0) {
+    if (params_.ocean_fraction <= 0.0) {
         return 0.0;
     }
-    const double mean_ice = weighted / weight_sum_;
+    // Area-weighted mean ice thickness over the whole globe (all ice treated
+    // as grounded land ice: the toy has no land/ocean mask).
+    const double mean_ice = area_weighted_mean(grid_.ice());
     return params_.ice_density_ratio * mean_ice / params_.ocean_fraction;
 }
 
@@ -133,14 +133,32 @@ void SimulationEngine::step() {
 
     double* I = grid_.ice();
     double* A = grid_.albedo();
+    double* C = grid_.co2();
 
-    // Global reference temperature at the end of this step, cooled by the
-    // planetary-albedo feedback (uses the previous step's albedo field: a
-    // stable one-step lag that closes the global energy balance). This is the
-    // channel that lets a growing ice cap advance its own margin equatorward.
+    // --- CO2 greenhouse feedback (well-mixed global scalar) ---
+    // Colder oceans dissolve more CO2, lowering the atmospheric equilibrium;
+    // CO2 relaxes toward it on a slow ocean timescale. Uses the previous step's
+    // global mean temperature (stable one-step lag).
+    const double t_global = global_temperature();
+    double co2_eq = params_.co2_base +
+        params_.co2_solubility * (t_global - params_.t0_global);
+    if (co2_eq < params_.co2_floor) co2_eq = params_.co2_floor;
+    const double k_co2 = 1.0 - std::exp(-params_.dt / params_.co2_relax_time);
+    co2_ += (co2_eq - co2_) * k_co2;
+    if (co2_ < params_.co2_floor) co2_ = params_.co2_floor;
+    // Logarithmic greenhouse forcing as a temperature anomaly (0 at co2_base).
+    const double greenhouse = params_.co2_climate_sens *
+        std::log2(co2_ / params_.co2_base);
+
+    // Global reference temperature at the end of this step: the secular cooling
+    // trend, cooled further by the planetary-albedo feedback (previous step's
+    // albedo, a stable one-step lag that closes the global energy balance), and
+    // shifted by the CO2 greenhouse anomaly. The albedo channel lets a growing
+    // ice cap advance its own margin equatorward.
     const double planet_alb = planetary_albedo();
     const double t_ref = global_equilibrium(time() + params_.dt) -
-        params_.planetary_gain * (planet_alb - params_.base_albedo);
+        params_.planetary_gain * (planet_alb - params_.base_albedo) +
+        greenhouse;
     // Exact relaxation factor for a constant target over dt: unconditionally
     // stable, unlike raw forward Euler which can overshoot when dt > relax_time.
     const double k = 1.0 - std::exp(-params_.dt / params_.relax_time);
@@ -153,7 +171,11 @@ void SimulationEngine::step() {
         double* trow = T + i * cols;
         double* irow = I + i * cols;
         double* arow = A + i * cols;
+        double* crow = C + i * cols;
         for (std::size_t j = 0; j < cols; ++j) {
+            // 0) Publish the well-mixed CO2 into the field (uniform).
+            crow[j] = co2_;
+
             // 1) Albedo from the current ice cover.
             const double alb = cell_albedo(irow[j]);
             arow[j] = alb;

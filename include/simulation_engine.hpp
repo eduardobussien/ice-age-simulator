@@ -15,7 +15,8 @@ namespace iceage {
 //   * a secular global-mean cooling trend,
 //   * per-cell relaxation toward the local equilibrium temperature,
 //   * ice-sheet mass balance (saturating accumulation / temperature-driven melt),
-//   * ice-albedo feedback (reflective ice cools its own cell, closing the loop).
+//   * ice-albedo feedback (reflective ice cools its own cell, closing the loop),
+//   * CO2 greenhouse feedback (cooling draws down well-mixed CO2, amplifying it).
 class SimulationEngine {
 public:
     explicit SimulationEngine(ClimateGrid& grid, const Params& params = Params{});
@@ -39,6 +40,11 @@ public:
     // area-weighted mean ice thickness, the ocean fraction, and ice density.
     double sea_level_drop() const noexcept;
 
+    // Area-weighted global mean surface temperature (C).
+    double global_temperature() const noexcept;
+    // Current well-mixed atmospheric CO2 (ppm).
+    double co2() const noexcept { return co2_; }
+
 private:
     // Global-mean equilibrium temperature at time t (secular cooling).
     double global_equilibrium(double t) const noexcept;
@@ -47,12 +53,15 @@ private:
 
     // Per-cell albedo as a function of ice thickness.
     double cell_albedo(double ice) const noexcept;
+    // cos(latitude) area-weighted global mean of a row-major grid field.
+    double area_weighted_mean(const double* field) const noexcept;
     // Area-weighted (cos-latitude) mean of the current albedo field.
     double planetary_albedo() const noexcept;
 
     ClimateGrid& grid_;
     Params params_;
     std::size_t iteration_ = 0;
+    double co2_ = 280.0;              // well-mixed atmospheric CO2 (ppm)
     std::vector<double> row_offset_;  // latitudinal dT per row (size = rows)
     std::vector<double> row_insol_;   // insolation per row (size = rows)
     std::vector<double> row_weight_;  // cos(latitude) area weight per row (size = rows)

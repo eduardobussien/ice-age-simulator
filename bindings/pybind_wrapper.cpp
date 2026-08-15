@@ -79,6 +79,11 @@ PYBIND11_MODULE(_core, m) {
         .def_readwrite("planetary_gain", &Params::planetary_gain)
         .def_readwrite("ocean_fraction", &Params::ocean_fraction)
         .def_readwrite("ice_density_ratio", &Params::ice_density_ratio)
+        .def_readwrite("co2_base", &Params::co2_base)
+        .def_readwrite("co2_solubility", &Params::co2_solubility)
+        .def_readwrite("co2_relax_time", &Params::co2_relax_time)
+        .def_readwrite("co2_climate_sens", &Params::co2_climate_sens)
+        .def_readwrite("co2_floor", &Params::co2_floor)
         .def("__repr__", [](const Params& p) {
             return "Params(dt=" + std::to_string(p.dt) +
                    ", t0_global=" + std::to_string(p.t0_global) +
@@ -96,7 +101,12 @@ PYBIND11_MODULE(_core, m) {
                    ", albedo_gain=" + std::to_string(p.albedo_gain) +
                    ", planetary_gain=" + std::to_string(p.planetary_gain) +
                    ", ocean_fraction=" + std::to_string(p.ocean_fraction) +
-                   ", ice_density_ratio=" + std::to_string(p.ice_density_ratio) + ")";
+                   ", ice_density_ratio=" + std::to_string(p.ice_density_ratio) +
+                   ", co2_base=" + std::to_string(p.co2_base) +
+                   ", co2_solubility=" + std::to_string(p.co2_solubility) +
+                   ", co2_relax_time=" + std::to_string(p.co2_relax_time) +
+                   ", co2_climate_sens=" + std::to_string(p.co2_climate_sens) +
+                   ", co2_floor=" + std::to_string(p.co2_floor) + ")";
         });
 
     py::class_<SimulationEngine>(m, "SimulationEngine")
@@ -109,5 +119,7 @@ PYBIND11_MODULE(_core, m) {
         .def_property_readonly("params", &SimulationEngine::params)
         .def_property_readonly("iteration", &SimulationEngine::iteration)
         .def_property_readonly("time", &SimulationEngine::time)
-        .def_property_readonly("sea_level_drop", &SimulationEngine::sea_level_drop);
+        .def_property_readonly("sea_level_drop", &SimulationEngine::sea_level_drop)
+        .def_property_readonly("global_temperature", &SimulationEngine::global_temperature)
+        .def_property_readonly("co2", &SimulationEngine::co2);
 }

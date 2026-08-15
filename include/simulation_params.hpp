@@ -29,6 +29,13 @@ struct Params {
     // Sea level (derived from total land-ice volume).
     double ocean_fraction = 0.71;      // fraction of the surface that is ocean
     double ice_density_ratio = 0.917;  // rho_ice / rho_water (ice -> water volume)
+
+    // CO2 greenhouse feedback (well-mixed global scalar).
+    double co2_base = 280.0;         // reference / starting CO2 (ppm)
+    double co2_solubility = 4.0;     // equilibrium CO2 shift per degree of global T (ppm/C)
+    double co2_relax_time = 10.0;    // ocean CO2 adjustment timescale (time units)
+    double co2_climate_sens = 3.0;   // warming per CO2 doubling (C)
+    double co2_floor = 10.0;         // minimum CO2, keeps the log finite (ppm)
 };
 
 } // namespace iceage
