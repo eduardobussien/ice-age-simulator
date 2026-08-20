@@ -63,50 +63,41 @@ PYBIND11_MODULE(_core, m) {
     py::class_<Params>(m, "Params")
         .def(py::init<>())
         .def_readwrite("dt", &Params::dt)
-        .def_readwrite("t0_global", &Params::t0_global)
-        .def_readwrite("cooling_rate", &Params::cooling_rate)
-        .def_readwrite("lat_gradient", &Params::lat_gradient)
         .def_readwrite("relax_time", &Params::relax_time)
         .def_readwrite("s2", &Params::s2)
+        .def_readwrite("solar_constant", &Params::solar_constant)
+        .def_readwrite("solar_mult", &Params::solar_mult)
+        .def_readwrite("olr_a", &Params::olr_a)
+        .def_readwrite("olr_b", &Params::olr_b)
+        .def_readwrite("transport_c", &Params::transport_c)
+        .def_readwrite("base_albedo", &Params::base_albedo)
+        .def_readwrite("ice_albedo", &Params::ice_albedo)
+        .def_readwrite("ice_albedo_depth", &Params::ice_albedo_depth)
         .def_readwrite("t_freeze", &Params::t_freeze)
         .def_readwrite("accum_rate", &Params::accum_rate)
         .def_readwrite("melt_rate", &Params::melt_rate)
         .def_readwrite("ice_max", &Params::ice_max)
-        .def_readwrite("base_albedo", &Params::base_albedo)
-        .def_readwrite("ice_albedo", &Params::ice_albedo)
-        .def_readwrite("ice_albedo_depth", &Params::ice_albedo_depth)
-        .def_readwrite("albedo_gain", &Params::albedo_gain)
-        .def_readwrite("planetary_gain", &Params::planetary_gain)
         .def_readwrite("ocean_fraction", &Params::ocean_fraction)
         .def_readwrite("ice_density_ratio", &Params::ice_density_ratio)
         .def_readwrite("co2_base", &Params::co2_base)
+        .def_readwrite("co2_forcing", &Params::co2_forcing)
+        .def_readwrite("co2_ref_temp", &Params::co2_ref_temp)
         .def_readwrite("co2_solubility", &Params::co2_solubility)
         .def_readwrite("co2_relax_time", &Params::co2_relax_time)
-        .def_readwrite("co2_climate_sens", &Params::co2_climate_sens)
         .def_readwrite("co2_floor", &Params::co2_floor)
         .def("__repr__", [](const Params& p) {
-            return "Params(dt=" + std::to_string(p.dt) +
-                   ", t0_global=" + std::to_string(p.t0_global) +
-                   ", cooling_rate=" + std::to_string(p.cooling_rate) +
-                   ", lat_gradient=" + std::to_string(p.lat_gradient) +
-                   ", relax_time=" + std::to_string(p.relax_time) +
-                   ", s2=" + std::to_string(p.s2) +
-                   ", t_freeze=" + std::to_string(p.t_freeze) +
-                   ", accum_rate=" + std::to_string(p.accum_rate) +
-                   ", melt_rate=" + std::to_string(p.melt_rate) +
-                   ", ice_max=" + std::to_string(p.ice_max) +
+            return "Params(solar_mult=" + std::to_string(p.solar_mult) +
+                   ", solar_constant=" + std::to_string(p.solar_constant) +
+                   ", olr_a=" + std::to_string(p.olr_a) +
+                   ", olr_b=" + std::to_string(p.olr_b) +
+                   ", transport_c=" + std::to_string(p.transport_c) +
                    ", base_albedo=" + std::to_string(p.base_albedo) +
                    ", ice_albedo=" + std::to_string(p.ice_albedo) +
-                   ", ice_albedo_depth=" + std::to_string(p.ice_albedo_depth) +
-                   ", albedo_gain=" + std::to_string(p.albedo_gain) +
-                   ", planetary_gain=" + std::to_string(p.planetary_gain) +
-                   ", ocean_fraction=" + std::to_string(p.ocean_fraction) +
-                   ", ice_density_ratio=" + std::to_string(p.ice_density_ratio) +
+                   ", ice_max=" + std::to_string(p.ice_max) +
                    ", co2_base=" + std::to_string(p.co2_base) +
                    ", co2_solubility=" + std::to_string(p.co2_solubility) +
-                   ", co2_relax_time=" + std::to_string(p.co2_relax_time) +
-                   ", co2_climate_sens=" + std::to_string(p.co2_climate_sens) +
-                   ", co2_floor=" + std::to_string(p.co2_floor) + ")";
+                   ", dt=" + std::to_string(p.dt) +
+                   ", relax_time=" + std::to_string(p.relax_time) + ", ...)";
         });
 
     py::class_<SimulationEngine>(m, "SimulationEngine")
@@ -116,10 +107,12 @@ PYBIND11_MODULE(_core, m) {
         .def("seed_equilibrium", &SimulationEngine::seed_equilibrium)
         .def("step", &SimulationEngine::step)
         .def("set_params", &SimulationEngine::set_params, py::arg("params"))
+        .def("set_solar_mult", &SimulationEngine::set_solar_mult, py::arg("value"))
         .def_property_readonly("params", &SimulationEngine::params)
         .def_property_readonly("iteration", &SimulationEngine::iteration)
         .def_property_readonly("time", &SimulationEngine::time)
         .def_property_readonly("sea_level_drop", &SimulationEngine::sea_level_drop)
         .def_property_readonly("global_temperature", &SimulationEngine::global_temperature)
+        .def_property_readonly("planetary_albedo", &SimulationEngine::planetary_albedo)
         .def_property_readonly("co2", &SimulationEngine::co2);
 }

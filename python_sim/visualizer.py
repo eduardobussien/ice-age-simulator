@@ -62,12 +62,14 @@ def _demo() -> None:
     grid = ClimateGrid(rows, cols)
     engine = SimulationEngine(grid, Params())
     engine.seed_equilibrium()
-    for _ in range(200):
+    # Reduce solar forcing to a partial-glaciation state and run to equilibrium.
+    engine.set_solar_mult(0.96)
+    for _ in range(1000):
         engine.step()
 
     out = snapshot(
-        grid, f"figures/state_t{engine.time:.0f}.png",
-        temp_title=f"Surface temperature (t={engine.time:.0f})",
+        grid, "figures/state_glaciated.png",
+        temp_title=f"Surface temperature (solar {engine.params.solar_mult * 100:.0f}%)",
     )
     print(f"saved {out.resolve()}")
 

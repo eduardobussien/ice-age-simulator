@@ -24,7 +24,6 @@ void SimulationEngine::set_params(const Params& params) {
 void SimulationEngine::build_lat_tables() {
     const std::size_t rows = grid_.rows();
     const std::size_t cols = grid_.cols();
-    row_offset_.assign(rows, 0.0);
     row_insol_.assign(rows, 0.0);
     row_weight_.assign(rows, 0.0);
     weight_sum_ = 0.0;
@@ -43,7 +42,6 @@ void SimulationEngine::build_lat_tables() {
         // Normalized annual-mean insolation (global mean = 1).
         const double insol = 1.0 + params_.s2 * legendre_p2(sin_lat);
 
-        row_offset_[i] = params_.lat_gradient * (insol - 1.0);
         row_insol_[i] = insol;
         row_weight_[i] = std::cos(lat_rad);  // cell-area weight
         weight_sum_ += row_weight_[i];
@@ -57,6 +55,18 @@ void SimulationEngine::build_lat_tables() {
             crow[j] = co2_;                  // well-mixed CO2 (uniform field)
         }
     }
+}
+
+double SimulationEngine::cell_albedo(double ice) const noexcept {
+    double f;
+    if (params_.ice_albedo_depth > 0.0) {
+        f = ice / params_.ice_albedo_depth;
+    } else {
+        f = (ice > 0.0) ? 1.0 : 0.0;
+    }
+    if (f < 0.0) f = 0.0;
+    else if (f > 1.0) f = 1.0;
+    return params_.base_albedo + (params_.ice_albedo - params_.base_albedo) * f;
 }
 
 double SimulationEngine::area_weighted_mean(const double* field) const noexcept {
@@ -95,30 +105,21 @@ double SimulationEngine::sea_level_drop() const noexcept {
     return params_.ice_density_ratio * mean_ice / params_.ocean_fraction;
 }
 
-double SimulationEngine::cell_albedo(double ice) const noexcept {
-    double f;
-    if (params_.ice_albedo_depth > 0.0) {
-        f = ice / params_.ice_albedo_depth;
-    } else {
-        f = (ice > 0.0) ? 1.0 : 0.0;
-    }
-    if (f < 0.0) f = 0.0;
-    else if (f > 1.0) f = 1.0;
-    return params_.base_albedo + (params_.ice_albedo - params_.base_albedo) * f;
-}
-
-double SimulationEngine::global_equilibrium(double t) const noexcept {
-    return params_.t0_global - params_.cooling_rate * t;
-}
-
 void SimulationEngine::seed_equilibrium() {
     const std::size_t rows = grid_.rows();
     const std::size_t cols = grid_.cols();
     double* T = grid_.temperature();
 
-    const double t_ref = global_equilibrium(time());
+    const double qfac = params_.solar_mult * params_.solar_constant / 4.0;
+    const double denom = params_.olr_b + params_.transport_c;
+    // Ice-free global mean (transport nets to zero globally, CO2 at base -> F=0).
+    const double t_global =
+        (qfac * (1.0 - params_.base_albedo) - params_.olr_a) / params_.olr_b;
+    const double c1 = -params_.olr_a + params_.transport_c * t_global;
+
     for (std::size_t i = 0; i < rows; ++i) {
-        const double t_eq = t_ref + row_offset_[i];
+        const double q = qfac * row_insol_[i];
+        const double t_eq = (q * (1.0 - params_.base_albedo) + c1) / denom;
         double* trow = T + i * cols;
         for (std::size_t j = 0; j < cols; ++j) {
             trow[j] = t_eq;
@@ -130,7 +131,6 @@ void SimulationEngine::step() {
     const std::size_t rows = grid_.rows();
     const std::size_t cols = grid_.cols();
     double* T = grid_.temperature();
-
     double* I = grid_.ice();
     double* A = grid_.albedo();
     double* C = grid_.co2();
@@ -141,33 +141,28 @@ void SimulationEngine::step() {
     // global mean temperature (stable one-step lag).
     const double t_global = global_temperature();
     double co2_eq = params_.co2_base +
-        params_.co2_solubility * (t_global - params_.t0_global);
+        params_.co2_solubility * (t_global - params_.co2_ref_temp);
     if (co2_eq < params_.co2_floor) co2_eq = params_.co2_floor;
     const double k_co2 = 1.0 - std::exp(-params_.dt / params_.co2_relax_time);
     co2_ += (co2_eq - co2_) * k_co2;
     if (co2_ < params_.co2_floor) co2_ = params_.co2_floor;
-    // Logarithmic greenhouse forcing as a temperature anomaly (0 at co2_base).
-    const double greenhouse = params_.co2_climate_sens *
-        std::log2(co2_ / params_.co2_base);
+    const double greenhouse_f = params_.co2_forcing * std::log(co2_ / params_.co2_base);
 
-    // Global reference temperature at the end of this step: the secular cooling
-    // trend, cooled further by the planetary-albedo feedback (previous step's
-    // albedo, a stable one-step lag that closes the global energy balance), and
-    // shifted by the CO2 greenhouse anomaly. The albedo channel lets a growing
-    // ice cap advance its own margin equatorward.
-    const double planet_alb = planetary_albedo();
-    const double t_ref = global_equilibrium(time() + params_.dt) -
-        params_.planetary_gain * (planet_alb - params_.base_albedo) +
-        greenhouse;
-    // Exact relaxation factor for a constant target over dt: unconditionally
-    // stable, unlike raw forward Euler which can overshoot when dt > relax_time.
+    // --- Energy-balance equilibrium temperature ---
+    // T_eq = [ Q*(1-albedo) - olr_a + F + transport_c*T_global ] / (olr_b + transport_c)
+    // The transport term (using the lagged global mean) is the planetary channel
+    // that lets a growing ice cap cool the rest of the world and advance its
+    // margin equatorward.
+    const double qfac = params_.solar_mult * params_.solar_constant / 4.0;
+    const double denom = params_.olr_b + params_.transport_c;
+    const double c1 = -params_.olr_a + greenhouse_f + params_.transport_c * t_global;
+    // Exact relaxation factor for a constant target over dt (unconditionally stable).
     const double k = 1.0 - std::exp(-params_.dt / params_.relax_time);
     const double dt = params_.dt;
     const bool saturating = params_.ice_max > 0.0;
 
     for (std::size_t i = 0; i < rows; ++i) {
-        const double base_eq = t_ref + row_offset_[i];
-        const double insol = row_insol_[i];
+        const double q = qfac * row_insol_[i];
         double* trow = T + i * cols;
         double* irow = I + i * cols;
         double* arow = A + i * cols;
@@ -180,10 +175,8 @@ void SimulationEngine::step() {
             const double alb = cell_albedo(irow[j]);
             arow[j] = alb;
 
-            // 2) Local equilibrium including the ice-albedo feedback: reflective
-            //    cells absorb less sunlight (weighted by insolation) and cool.
-            const double t_eq = base_eq -
-                params_.albedo_gain * insol * (alb - params_.base_albedo);
+            // 2) Local energy-balance equilibrium temperature.
+            const double t_eq = (q * (1.0 - alb) + c1) / denom;
 
             // 3) Relax temperature toward that equilibrium.
             trow[j] += (t_eq - trow[j]) * k;

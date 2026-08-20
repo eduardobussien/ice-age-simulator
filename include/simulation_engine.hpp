@@ -8,15 +8,14 @@
 
 namespace iceage {
 
-// Advances a ClimateGrid through discrete time steps of length params.dt.
+// Advances a ClimateGrid through discrete time steps of length params.dt using
+// a Budyko-Sellers energy balance (see simulation_params.hpp for the equation).
 //
-// Model so far:
-//   * latitudinal insolation via the 2nd-Legendre EBM form,
-//   * a secular global-mean cooling trend,
-//   * per-cell relaxation toward the local equilibrium temperature,
-//   * ice-sheet mass balance (saturating accumulation / temperature-driven melt),
-//   * ice-albedo feedback (reflective ice cools its own cell, closing the loop),
-//   * CO2 greenhouse feedback (cooling draws down well-mixed CO2, amplifying it).
+// Feedbacks are all intrinsic to the energy balance:
+//   * ice-albedo    -- ice raises albedo, cutting absorbed shortwave (local),
+//   * heat transport -- couples every cell to the global mean (planetary),
+//   * CO2 greenhouse -- cooling draws down well-mixed CO2, weakening forcing.
+// The external driver is the solar multiplier (Milankovitch / solar forcing).
 class SimulationEngine {
 public:
     explicit SimulationEngine(ClimateGrid& grid, const Params& params = Params{});
@@ -25,8 +24,12 @@ public:
     void set_params(const Params& params);
     const Params& params() const noexcept { return params_; }
 
-    // Set every cell to the equilibrium temperature at the current time.
-    // Use once to start a run "at rest" with the latitudinal profile in place.
+    // Live-adjust just the solar multiplier (the forcing knob) without resetting
+    // the grid state -- used to ramp or sweep the forcing over a run.
+    void set_solar_mult(double value) noexcept { params_.solar_mult = value; }
+
+    // Set every cell to the ice-free radiative equilibrium for the current
+    // forcing. Use once to start a run "at rest".
     void seed_equilibrium();
 
     // Advance one temporal iteration of length params.dt.
@@ -35,34 +38,24 @@ public:
     std::size_t iteration() const noexcept { return iteration_; }
     double time() const noexcept { return static_cast<double>(iteration_) * params_.dt; }
 
-    // Global-mean sea-level fall (metres) from total land-ice volume, relative
-    // to the ice-free state. Radius-independent: it depends only on the
-    // area-weighted mean ice thickness, the ocean fraction, and ice density.
-    double sea_level_drop() const noexcept;
-
-    // Area-weighted global mean surface temperature (C).
-    double global_temperature() const noexcept;
-    // Current well-mixed atmospheric CO2 (ppm).
-    double co2() const noexcept { return co2_; }
+    // Diagnostics.
+    double sea_level_drop() const noexcept;     // metres of global sea-level fall
+    double global_temperature() const noexcept; // area-weighted mean surface T (C)
+    double planetary_albedo() const noexcept;   // area-weighted mean albedo
+    double co2() const noexcept { return co2_; } // well-mixed atmospheric CO2 (ppm)
 
 private:
-    // Global-mean equilibrium temperature at time t (secular cooling).
-    double global_equilibrium(double t) const noexcept;
-    // Precompute per-row latitudinal temperature offset + insolation field.
-    void build_lat_tables();
-
     // Per-cell albedo as a function of ice thickness.
     double cell_albedo(double ice) const noexcept;
     // cos(latitude) area-weighted global mean of a row-major grid field.
     double area_weighted_mean(const double* field) const noexcept;
-    // Area-weighted (cos-latitude) mean of the current albedo field.
-    double planetary_albedo() const noexcept;
+    // Precompute per-row insolation and area-weight tables; reset the buffers.
+    void build_lat_tables();
 
     ClimateGrid& grid_;
     Params params_;
     std::size_t iteration_ = 0;
     double co2_ = 280.0;              // well-mixed atmospheric CO2 (ppm)
-    std::vector<double> row_offset_;  // latitudinal dT per row (size = rows)
     std::vector<double> row_insol_;   // insolation per row (size = rows)
     std::vector<double> row_weight_;  // cos(latitude) area weight per row (size = rows)
     double weight_sum_ = 0.0;         // sum of row_weight_ (per column)
