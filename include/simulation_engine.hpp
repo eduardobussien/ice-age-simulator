@@ -12,9 +12,9 @@ namespace iceage {
 // a Budyko-Sellers energy balance (see simulation_params.hpp for the equation).
 //
 // Feedbacks are all intrinsic to the energy balance:
-//   * ice-albedo    -- ice raises albedo, cutting absorbed shortwave (local),
-//   * heat transport -- couples every cell to the global mean (planetary),
-//   * CO2 greenhouse -- cooling draws down well-mixed CO2, weakening forcing.
+//   * ice-albedo    - ice raises albedo, cutting absorbed shortwave (local),
+//   * heat transport - couples every cell to the global mean (planetary),
+//   * CO2 greenhouse - cooling draws down well-mixed CO2, weakening forcing.
 // The external driver is the solar multiplier (Milankovitch / solar forcing).
 class SimulationEngine {
 public:
@@ -25,7 +25,7 @@ public:
     const Params& params() const noexcept { return params_; }
 
     // Live-adjust just the solar multiplier (the forcing knob) without resetting
-    // the grid state -- used to ramp or sweep the forcing over a run.
+    // the grid state - used to ramp or sweep the forcing over a run.
     void set_solar_mult(double value) noexcept { params_.solar_mult = value; }
 
     // Set every cell to the ice-free radiative equilibrium for the current

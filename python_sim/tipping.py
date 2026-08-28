@@ -2,7 +2,7 @@
 
 Sweeps the solar forcing down from present day until the planet snowballs, then
 back up until it deglaciates. Because the ice-albedo feedback makes the climate
-bistable, the two thresholds differ -- the classic hysteresis loop. Greenhouse
+bistable, the two thresholds differ - the classic hysteresis loop. Greenhouse
 CO2 is held fixed so this isolates the pure solar / ice-albedo bifurcation.
 
 Run from the repo root once the extension is built:

@@ -4,11 +4,11 @@ High-performance climate simulator modeling hypothetical global-cooling
 scenarios: continental ice-sheet growth, albedo feedback, and CO2/solar
 forcing on a 2-D latitude x longitude grid.
 
-- **C++ core** (`include/`, `src/`) — Struct-of-Arrays climate state
+- **C++ core** (`include/`, `src/`) - Struct-of-Arrays climate state
   (`float64`) stepped over discrete time iterations.
-- **pybind11 bindings** (`bindings/`) — expose the grid buffers to Python as
+- **pybind11 bindings** (`bindings/`) - expose the grid buffers to Python as
   **zero-copy** NumPy arrays.
-- **Python layer** (`python_sim/`) — run control, parameters, and
+- **Python layer** (`python_sim/`) - run control, parameters, and
   Matplotlib/Cartopy visualization.
 
 ## Build (Windows / MSVC)
