@@ -1,19 +1,47 @@
 # Ice Age Simulator
 
-High-performance climate simulator modeling hypothetical global-cooling
-scenarios: continental ice-sheet growth, albedo feedback, and CO2/solar
-forcing on a 2-D latitude x longitude grid.
+A hybrid C++/Python climate simulator that models global cooling, continental
+ice-sheet growth, and the feedbacks that drive ice ages on a 2-D latitude x
+longitude grid. The physics is a **Budyko-Sellers energy-balance model** with
+published coefficients, so the present-day climate and the snowball tipping
+point come out realistic rather than arbitrary.
 
-- **C++ core** (`include/`, `src/`) - Struct-of-Arrays climate state
-  (`float64`) stepped over discrete time iterations.
-- **pybind11 bindings** (`bindings/`) - expose the grid buffers to Python as
-  **zero-copy** NumPy arrays.
-- **Python layer** (`python_sim/`) - run control, parameters, and
-  Matplotlib/Cartopy visualization.
+- **C++ core** (`include/`, `src/`): Struct-of-Arrays climate state (`float64`)
+  stepped over discrete time iterations.
+- **pybind11 bindings** (`bindings/`): expose the grid buffers to Python as
+  **zero-copy** NumPy arrays (no copies between the engine and the plots).
+- **Python layer** (`python_sim/`): run control, tunable parameters, and
+  Matplotlib / Cartopy visualization.
 
-## Build (Windows / MSVC)
+## The model
 
-Prereqs: Python 3.9+, CMake 3.18+, and Visual Studio Build Tools (C++ workload).
+Each grid cell relaxes toward the local energy-balance equilibrium temperature:
+
+```
+solar_mult * (S0/4) * insol * (1 - albedo)      absorbed shortwave
+    = olr_a + olr_b * T                          outgoing longwave (Budyko)
+    + transport_c * (T - T_global)               meridional heat transport
+    - co2_forcing * ln(CO2 / co2_base)           greenhouse forcing
+```
+
+Published coefficients (S0 = 1361 W/m2, olr_a = 200, olr_b = 2.09,
+transport_c = 3.8, albedo 0.31 ice-free / 0.60 ice) give a realistic present
+day: **global 15 C, equator 25 C, pole -12 C, CO2 280 ppm**.
+
+Three feedbacks are intrinsic to the balance (not bolted-on gains):
+
+- **Ice-albedo** (local): ice raises albedo, cutting absorbed sunlight.
+- **Heat transport** (planetary): couples every cell to the global mean, so a
+  growing ice cap cools the whole world and advances its own margin.
+- **CO2 greenhouse**: cooling draws down well-mixed CO2, weakening the
+  greenhouse and cooling further.
+
+The external driver is the **solar multiplier** (Milankovitch / solar forcing).
+Every coefficient lives in the `Params` struct and is settable from Python.
+
+## Build
+
+Prereqs: a C++17 compiler (MinGW GCC or MSVC), CMake 3.18+, Python 3.9+.
 
 ```bash
 python -m pip install -r requirements.txt
@@ -21,13 +49,46 @@ cmake -S . -B build -Dpybind11_DIR="$(python -m pybind11 --cmakedir)"
 cmake --build build --config Release
 ```
 
-The extension is emitted into `python_sim/` as `_core*.pyd`.
+In PowerShell, quote the flag instead of using `$( )`:
+`cmake -S . -B build "-Dpybind11_DIR=$(python -m pybind11 --cmakedir)"`.
 
-## Smoke test
+The extension is emitted into `python_sim/` as `_core*.pyd`. On MinGW the C++
+runtime is statically linked (handled in `CMakeLists.txt`), so the module is
+self-contained.
 
-```bash
-python -m python_sim.main
+## Run
+
+All scripts run from the repo root once the extension is built.
+
+| Command | What it does |
+| --- | --- |
+| `python -m python_sim.main` | Smoke test: prints the realistic present-day climate, then reduces solar forcing step by step to the snowball tipping point. |
+| `python -m python_sim.visualizer` | Flat lat/lon snapshot (temperature, ice, albedo) to `figures/`. Matplotlib only, no network. |
+| `python -m python_sim.geomap` | Cartopy globe snapshot on a Robinson projection with coastlines. |
+| `python -m python_sim.animate` | GIF of a full run (flat maps). |
+| `python -m python_sim.animate_globe` | GIF of a full run on the Cartopy globe. |
+| `python -m python_sim.tipping` | Snowball bifurcation experiment: sweeps solar forcing down and back up, plots the hysteresis loop. |
+
+The Cartopy scripts download Natural Earth coastline data on first run (needs a
+network connection), then cache it. Generated figures land in `figures/`, which
+is git-ignored.
+
+## Key results
+
+- **Present day** (solar 100%): global 15 C with permanent polar ice caps.
+- **Snowball tipping**: a solar reduction of only a few percent tips the planet
+  into a full snowball.
+- **Bistability / hysteresis**: once frozen, the snowball does not deglaciate
+  until solar rises far above present, because ice is so reflective. Two stable
+  climates coexist over a wide range of forcing - the classic Budyko result.
+
+## Layout
+
 ```
-
-Expected: mean temperature drops 1.0 C over 10 steps, with `owndata == False`
-confirming the NumPy views share the C++ buffers.
+include/   simulation_params.hpp, simulation_engine.hpp, climate_grid.hpp
+src/       simulation_engine.cpp, climate_grid.cpp
+bindings/  pybind_wrapper.cpp        (zero-copy NumPy views)
+python_sim/ __init__.py, main.py, visualizer.py, geomap.py,
+            animate.py, animate_globe.py, tipping.py
+CMakeLists.txt, requirements.txt
+```
