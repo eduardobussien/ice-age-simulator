@@ -11,3 +11,6 @@ numpy>=1.24
 # --- Visualization ---
 matplotlib>=3.7
 cartopy>=0.22   # map projections; needs GEOS/PROJ wheels (pip pulls these on Win)
+
+# --- Dev / testing ---
+pytest>=7

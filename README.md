@@ -73,6 +73,17 @@ The Cartopy scripts download Natural Earth coastline data on first run (needs a
 network connection), then cache it. Generated figures land in `figures/`, which
 is git-ignored.
 
+## Tests
+
+A `pytest` suite in `tests/` locks in the physics: zero-copy bindings, the
+realistic present-day baseline (~15 C), the analytic energy balance, the
+sea-level formula, and the snowball tipping behaviour. Build the extension
+first, then:
+
+```bash
+python -m pytest tests/ -v
+```
+
 ## Key results
 
 - **Present day** (solar 100%): global 15 C with permanent polar ice caps.
