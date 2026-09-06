@@ -1,0 +1,31 @@
+[build-system]
+requires = ["scikit-build-core>=0.8", "pybind11>=2.12"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "ice-age-simulator"
+version = "0.1.0"
+description = "A Budyko-Sellers energy-balance ice-age climate simulator with a C++ core and zero-copy NumPy bindings."
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [{ name = "Your Name" }]
+keywords = ["climate", "energy-balance-model", "budyko-sellers", "pybind11", "simulation"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: C++",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+dependencies = [
+    "numpy>=1.24",
+    "matplotlib>=3.7",
+    "cartopy>=0.22",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+
+[tool.scikit-build]
+minimum-version = "0.8"
+cmake.version = ">=3.18"
+# Ship the Python package and the compiled extension installed into it.
+wheel.packages = ["python_sim"]

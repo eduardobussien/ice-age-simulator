@@ -39,21 +39,44 @@ Three feedbacks are intrinsic to the balance (not bolted-on gains):
 The external driver is the **solar multiplier** (Milankovitch / solar forcing).
 Every coefficient lives in the `Params` struct and is settable from Python.
 
-## Build
+## Install
 
-Prereqs: a C++17 compiler (MinGW GCC or MSVC), CMake 3.18+, Python 3.9+.
+Prereqs: a C++17 compiler (MinGW GCC or MSVC), CMake 3.18+, Python 3.9+. The
+C++ extension builds automatically; scikit-build-core drives CMake.
+
+```bash
+pip install .
+```
+
+For an editable/development install (rebuilds on import when sources change):
+
+```bash
+pip install -e .
+```
+
+On Windows with MinGW, force the Ninja generator so CMake uses GCC rather than
+looking for MSVC (PowerShell shown; use `set CMAKE_GENERATOR=Ninja` in cmd, or
+`export` in bash):
+
+```bash
+$env:CMAKE_GENERATOR="Ninja"
+pip install .
+```
+
+## Build from source (development)
+
+To build the extension in place without installing (so `import python_sim`
+works from the repo root):
 
 ```bash
 python -m pip install -r requirements.txt
-cmake -S . -B build -Dpybind11_DIR="$(python -m pybind11 --cmakedir)"
+cmake -S . -B build -G Ninja
 cmake --build build --config Release
 ```
 
-In PowerShell, quote the flag instead of using `$( )`:
-`cmake -S . -B build "-Dpybind11_DIR=$(python -m pybind11 --cmakedir)"`.
-
-The extension is emitted into `python_sim/` as `_core*.pyd`. On MinGW the C++
-runtime is statically linked (handled in `CMakeLists.txt`), so the module is
+pybind11 is discovered automatically from the active Python. The extension is
+emitted into `python_sim/` as `_core*.pyd`; on MinGW the C++ runtime is
+statically linked (handled in `CMakeLists.txt`), so the module is
 self-contained.
 
 ## Run

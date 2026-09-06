@@ -26,7 +26,7 @@ static py::array_t<double> view(py::object owner, double* data,
 
 PYBIND11_MODULE(_core, m) {
     m.doc() = "Ice Age Simulator C++ core (SoA climate grid + engine).";
-    m.attr("__version__") = "0.0.1";
+    m.attr("__version__") = "0.1.0";
 
     py::class_<ClimateGrid>(m, "ClimateGrid")
         .def(py::init<std::size_t, std::size_t>(),
