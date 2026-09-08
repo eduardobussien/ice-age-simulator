@@ -41,6 +41,39 @@ def globe(fig, pos, field: np.ndarray, title: str, cmap: str, label: str,
     return ax
 
 
+# field name -> (title, colormap, colorbar label, vmin, vmax); None means auto.
+_ONE_FIELDS = {
+    "T": ("Surface temperature", "coolwarm", "T (C)", None, None),
+    "ice": ("Ice thickness", "Blues", "ice (m)", 0.0, None),
+    "albedo": ("Surface albedo", "cividis", "albedo", 0.0, 1.0),
+    "solar": ("Insolation (annual mean)", "inferno", "S / S_global", None, None),
+}
+
+
+def map_one(grid, field: str = "T", path=None, subtitle: str = ""):
+    """Globe a single field ("T", "ice", "albedo", or "solar").
+
+    Saves to `path` if given (returns the path); otherwise returns the figure.
+    """
+    title, cmap, label, vmin, vmax = _ONE_FIELDS[field]
+    data = np.asarray(getattr(grid, field))
+    if field == "T":  # symmetric diverging scale about 0 C
+        vmax = float(np.abs(data).max()) or 1.0
+        vmin = -vmax
+
+    fig = plt.figure(figsize=(7, 4.2))
+    globe(fig, 111, data, subtitle or title, cmap, label, vmin=vmin, vmax=vmax)
+    fig.tight_layout()
+
+    if path is None:
+        return fig
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(path, dpi=110)
+    plt.close(fig)
+    return path
+
+
 def snapshot_map(grid, path, subtitle: str = ""):
     """Render temperature + ice + albedo as globes and save to `path`."""
     T = np.asarray(grid.T)
