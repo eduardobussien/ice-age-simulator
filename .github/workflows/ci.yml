@@ -24,5 +24,9 @@ jobs:
           python -m pip install . --no-deps
           python -m pip install numpy pytest
 
+      # Run from outside the repo root so `import python_sim` resolves to the
+      # pip-installed package (with the compiled _core), not the un-built source
+      # tree that would otherwise shadow it on sys.path.
       - name: Run tests
-        run: python -m pytest tests/ -v
+        working-directory: ${{ runner.temp }}
+        run: python -m pytest "$GITHUB_WORKSPACE/tests" -v
