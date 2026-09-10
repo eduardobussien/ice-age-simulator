@@ -272,3 +272,11 @@ def test_set_params_takes_effect():
     p.s2 = -0.30
     e.set_params(p)
     assert e.params.s2 == pytest.approx(-0.30)
+
+
+def test_repr_is_informative():
+    g, e = fresh()
+    assert repr(g) == f"ClimateGrid(rows={ROWS}, cols={COLS})"
+    r = repr(e)
+    assert r.startswith("SimulationEngine(")
+    assert "global_T" in r and "co2" in r and "solar_mult" in r

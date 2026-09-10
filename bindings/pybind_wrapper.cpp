@@ -1,6 +1,8 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
 
+#include <iomanip>
+#include <sstream>
 #include <string>
 
 #include "climate_grid.hpp"
@@ -58,6 +60,10 @@ PYBIND11_MODULE(_core, m) {
         .def_property_readonly("albedo", [](py::object self) {
             ClimateGrid& g = self.cast<ClimateGrid&>();
             return view(self, g.albedo(), g.rows(), g.cols());
+        })
+        .def("__repr__", [](const ClimateGrid& g) {
+            return "ClimateGrid(rows=" + std::to_string(g.rows()) +
+                   ", cols=" + std::to_string(g.cols()) + ")";
         });
 
     py::class_<Params>(m, "Params")
@@ -114,5 +120,14 @@ PYBIND11_MODULE(_core, m) {
         .def_property_readonly("sea_level_drop", &SimulationEngine::sea_level_drop)
         .def_property_readonly("global_temperature", &SimulationEngine::global_temperature)
         .def_property_readonly("planetary_albedo", &SimulationEngine::planetary_albedo)
-        .def_property_readonly("co2", &SimulationEngine::co2);
+        .def_property_readonly("co2", &SimulationEngine::co2)
+        .def("__repr__", [](SimulationEngine& e) {
+            std::ostringstream os;
+            os << std::fixed
+               << "SimulationEngine(iteration=" << e.iteration()
+               << ", solar_mult=" << std::setprecision(3) << e.params().solar_mult
+               << ", global_T=" << std::setprecision(2) << e.global_temperature() << " C"
+               << ", co2=" << std::setprecision(0) << e.co2() << " ppm)";
+            return os.str();
+        });
 }
