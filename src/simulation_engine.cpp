@@ -106,9 +106,19 @@ double SimulationEngine::sea_level_drop() const noexcept {
 }
 
 void SimulationEngine::seed_equilibrium() {
+    // Reset to a fully consistent "at rest, ice-free" state for the current
+    // forcing: temperature at its ice-free radiative equilibrium, no ice, base
+    // albedo, CO2 at base, iteration count zero. This makes the method safe to
+    // reuse to restart a run, not only to initialize a fresh engine.
     const std::size_t rows = grid_.rows();
     const std::size_t cols = grid_.cols();
     double* T = grid_.temperature();
+    double* I = grid_.ice();
+    double* A = grid_.albedo();
+    double* C = grid_.co2();
+
+    iteration_ = 0;
+    co2_ = params_.co2_base;
 
     const double qfac = params_.solar_mult * params_.solar_constant / 4.0;
     const double denom = params_.olr_b + params_.transport_c;
@@ -121,8 +131,14 @@ void SimulationEngine::seed_equilibrium() {
         const double q = qfac * row_insol_[i];
         const double t_eq = (q * (1.0 - params_.base_albedo) + c1) / denom;
         double* trow = T + i * cols;
+        double* irow = I + i * cols;
+        double* arow = A + i * cols;
+        double* crow = C + i * cols;
         for (std::size_t j = 0; j < cols; ++j) {
             trow[j] = t_eq;
+            irow[j] = 0.0;
+            arow[j] = params_.base_albedo;
+            crow[j] = co2_;
         }
     }
 }

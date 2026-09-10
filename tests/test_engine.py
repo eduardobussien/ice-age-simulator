@@ -119,6 +119,21 @@ def test_seed_starts_ice_free():
     assert np.asarray(g.ice).max() == 0.0
 
 
+def test_seed_equilibrium_fully_resets_state():
+    # Drive into a snowball (ice, low CO2, high iteration), then re-seed: the
+    # engine must return to a clean, consistent ice-free rest state.
+    g, e = fresh()
+    e.set_solar_mult(0.90)
+    run(e, 500)
+    assert np.asarray(g.ice).max() > 0.0  # precondition: state is dirty
+
+    e.seed_equilibrium()
+    assert np.asarray(g.ice).max() == 0.0
+    assert np.asarray(g.albedo).max() == pytest.approx(e.params.base_albedo)
+    assert e.co2 == pytest.approx(e.params.co2_base)
+    assert e.iteration == 0
+
+
 def test_present_day_has_partial_ice_caps():
     g, e = fresh()
     run(e, 600)
