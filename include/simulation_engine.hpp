@@ -49,8 +49,13 @@ private:
     double cell_albedo(double ice) const noexcept;
     // cos(latitude) area-weighted global mean of a row-major grid field.
     double area_weighted_mean(const double* field) const noexcept;
-    // Precompute per-row insolation and area-weight tables; reset the buffers.
+    // Precompute per-row insolation / area-weight tables and the insolation
+    // field. Derived from the parameters only; does not touch simulation state.
     void build_lat_tables();
+    // Reset the dynamic state to its ice-free base (iteration, CO2, albedo /
+    // CO2 fields). Called at construction and by seed_equilibrium, NOT by
+    // set_params, so reconfiguring parameters mid-run preserves the run.
+    void init_state();
 
     ClimateGrid& grid_;
     Params params_;

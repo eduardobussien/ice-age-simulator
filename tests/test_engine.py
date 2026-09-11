@@ -274,6 +274,27 @@ def test_set_params_takes_effect():
     assert e.params.s2 == pytest.approx(-0.30)
 
 
+def test_set_params_preserves_run_state():
+    # Changing a parameter mid-run must not silently reset the simulation state
+    # (CO2, ice, iteration): set_params reconfigures, it does not restart.
+    g, e = fresh()
+    e.set_solar_mult(0.95)
+    run(e, 400)
+    co2_before = e.co2
+    ice_before = float(np.asarray(g.ice).sum())
+    iter_before = e.iteration
+    assert ice_before > 0.0 and co2_before < e.params.co2_base  # state is dirty
+
+    p = Params()
+    p.solar_mult = 0.95           # keep the forcing the run was under
+    p.melt_rate = p.melt_rate * 1.1  # change one unrelated knob
+    e.set_params(p)
+
+    assert e.co2 == pytest.approx(co2_before)
+    assert float(np.asarray(g.ice).sum()) == pytest.approx(ice_before)
+    assert e.iteration == iter_before
+
+
 def test_repr_is_informative():
     g, e = fresh()
     assert repr(g) == f"ClimateGrid(rows={ROWS}, cols={COLS})"

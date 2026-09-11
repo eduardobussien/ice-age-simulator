@@ -14,6 +14,7 @@ inline double legendre_p2(double x) noexcept { return 0.5 * (3.0 * x * x - 1.0);
 SimulationEngine::SimulationEngine(ClimateGrid& grid, const Params& params)
     : grid_(grid), params_(params) {
     build_lat_tables();
+    init_state();
 }
 
 void SimulationEngine::set_params(const Params& params) {
@@ -27,11 +28,8 @@ void SimulationEngine::build_lat_tables() {
     row_insol_.assign(rows, 0.0);
     row_weight_.assign(rows, 0.0);
     weight_sum_ = 0.0;
-    co2_ = params_.co2_base;
 
     double* S = grid_.solar();
-    double* A = grid_.albedo();
-    double* C = grid_.co2();
     const double dlat = 180.0 / static_cast<double>(rows);  // degrees per row
 
     for (std::size_t i = 0; i < rows; ++i) {
@@ -47,13 +45,25 @@ void SimulationEngine::build_lat_tables() {
         weight_sum_ += row_weight_[i];
 
         double* srow = S + i * cols;
-        double* arow = A + i * cols;
-        double* crow = C + i * cols;
         for (std::size_t j = 0; j < cols; ++j) {
-            srow[j] = insol;                 // static insolation field (for viz)
-            arow[j] = params_.base_albedo;   // ice-free until ice accumulates
-            crow[j] = co2_;                  // well-mixed CO2 (uniform field)
+            srow[j] = insol;  // static insolation field (for viz)
         }
+    }
+}
+
+void SimulationEngine::init_state() {
+    // Dynamic state reset to the ice-free base for the current parameters. Ice
+    // and temperature are left to the caller (the grid zero-initializes them;
+    // seed_equilibrium sets both explicitly).
+    const std::size_t n = grid_.size();
+    double* A = grid_.albedo();
+    double* C = grid_.co2();
+
+    iteration_ = 0;
+    co2_ = params_.co2_base;
+    for (std::size_t i = 0; i < n; ++i) {
+        A[i] = params_.base_albedo;  // ice-free until ice accumulates
+        C[i] = co2_;                 // well-mixed CO2 (uniform field)
     }
 }
 
@@ -107,18 +117,15 @@ double SimulationEngine::sea_level_drop() const noexcept {
 
 void SimulationEngine::seed_equilibrium() {
     // Reset to a fully consistent "at rest, ice-free" state for the current
-    // forcing: temperature at its ice-free radiative equilibrium, no ice, base
-    // albedo, CO2 at base, iteration count zero. This makes the method safe to
-    // reuse to restart a run, not only to initialize a fresh engine.
+    // forcing: no ice, base albedo, CO2 at base, iteration count zero (via
+    // init_state), and temperature at its ice-free radiative equilibrium. Safe
+    // to reuse to restart a run, not only to initialize a fresh engine.
+    init_state();
+
     const std::size_t rows = grid_.rows();
     const std::size_t cols = grid_.cols();
     double* T = grid_.temperature();
     double* I = grid_.ice();
-    double* A = grid_.albedo();
-    double* C = grid_.co2();
-
-    iteration_ = 0;
-    co2_ = params_.co2_base;
 
     const double qfac = params_.solar_mult * params_.solar_constant / 4.0;
     const double denom = params_.olr_b + params_.transport_c;
@@ -132,13 +139,9 @@ void SimulationEngine::seed_equilibrium() {
         const double t_eq = (q * (1.0 - params_.base_albedo) + c1) / denom;
         double* trow = T + i * cols;
         double* irow = I + i * cols;
-        double* arow = A + i * cols;
-        double* crow = C + i * cols;
         for (std::size_t j = 0; j < cols; ++j) {
             trow[j] = t_eq;
             irow[j] = 0.0;
-            arow[j] = params_.base_albedo;
-            crow[j] = co2_;
         }
     }
 }
