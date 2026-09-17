@@ -6,8 +6,17 @@ on:
 
 jobs:
   test:
-    name: Build extension and run tests
-    runs-on: ubuntu-latest
+    name: Build and test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    # Use bash on every runner so $GITHUB_WORKSPACE and the run steps behave
+    # identically (Windows runners default to PowerShell otherwise).
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
 
@@ -15,9 +24,9 @@ jobs:
         with:
           python-version: "3.12"
 
-      # Builds the C++ extension via scikit-build-core (gcc + ninja on Linux).
-      # --no-deps keeps CI lean: the engine tests only need numpy, not the
-      # matplotlib / cartopy visualization stack.
+      # Builds the C++ extension via scikit-build-core (gcc on Linux, MSVC on
+      # Windows, clang on macOS). --no-deps keeps CI lean: the engine tests only
+      # need numpy, not the matplotlib / cartopy visualization stack.
       - name: Build and install the package
         run: |
           python -m pip install --upgrade pip
