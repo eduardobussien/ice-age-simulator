@@ -91,6 +91,7 @@ All scripts run from the repo root once the extension is built.
 | `python -m python_sim.animate` | GIF of a full run (flat maps). |
 | `python -m python_sim.animate_globe` | GIF of a full run on the Cartopy globe. |
 | `python -m python_sim.tipping` | Snowball bifurcation experiment: sweeps solar forcing down and back up, plots the hysteresis loop. |
+| `python -m python_sim.interactive` | Live window: drag the solar slider and watch the climate respond in real time. Find the tipping point by hand. Needs an interactive backend. |
 
 The Cartopy scripts download Natural Earth coastline data on first run (needs a
 network connection), then cache it. Generated figures land in `figures/`, which
