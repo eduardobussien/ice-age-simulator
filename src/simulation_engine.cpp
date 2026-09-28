@@ -109,10 +109,14 @@ double SimulationEngine::sea_level_drop() const noexcept {
     if (params_.ocean_fraction <= 0.0) {
         return 0.0;
     }
-    // Area-weighted mean ice thickness over the whole globe (all ice treated
-    // as grounded land ice: the toy has no land/ocean mask).
+    // Only ice resting on land lowers sea level: ice over the ocean floats and
+    // already displaces its own weight. The grid has no land/ocean mask, so the
+    // land share of every ice-covered cell is taken as the global land fraction.
+    // The water locked in that grounded ice is drawn from the ocean area.
+    const double land_fraction = 1.0 - params_.ocean_fraction;
     const double mean_ice = area_weighted_mean(grid_.ice());
-    return params_.ice_density_ratio * mean_ice / params_.ocean_fraction;
+    return params_.ice_density_ratio * mean_ice * land_fraction /
+           params_.ocean_fraction;
 }
 
 void SimulationEngine::seed_equilibrium() {

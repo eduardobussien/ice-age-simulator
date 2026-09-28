@@ -204,8 +204,23 @@ def test_sea_level_formula():
     g, e = fresh()
     g.ice[:] = 500.0  # uniform ice via the zero-copy view
     p = e.params
-    expected = p.ice_density_ratio * 500.0 / p.ocean_fraction
+    # Only the land share of the ice is grounded and draws water from the ocean.
+    land = 1.0 - p.ocean_fraction
+    expected = p.ice_density_ratio * 500.0 * land / p.ocean_fraction
     assert e.sea_level_drop == pytest.approx(expected, rel=1e-9)
+
+
+def test_sea_level_is_physically_bounded():
+    # Present-day ice should be close to Earth's ~66 m of grounded ice, and even
+    # a full snowball can never lower the sea by more than the ocean is deep.
+    _, e = fresh()
+    run(e, 600)
+    assert 40.0 < e.sea_level_drop < 100.0
+
+    _, e = fresh()
+    e.set_solar_mult(0.90)
+    run(e, 1500)
+    assert e.sea_level_drop < 3700.0  # mean ocean depth
 
 
 # --------------------------------------------------------------------------

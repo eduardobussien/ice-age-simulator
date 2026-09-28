@@ -37,7 +37,10 @@ def main() -> None:
     print(f"  global  = {engine.global_temperature:6.2f} C   (Earth ~15)")
     print(f"  equator = {T[rows // 2].mean():6.2f} C   (Earth ~26)")
     print(f"  pole    = {T[0].mean():6.2f} C   (Earth ~-16, Arctic)")
-    print(f"  CO2     = {engine.co2:4.0f} ppm    sea level = {-engine.sea_level_drop:5.0f} m")
+    print(f"  CO2     = {engine.co2:6.0f} ppm (Earth pre-industrial 280)")
+    # Relative to an ice-free planet: melting all of today's land ice would
+    # raise the real ocean by about 66 m.
+    print(f"  sea lvl = {-engine.sea_level_drop:6.0f} m   (vs ice-free Earth; real ~-66)")
 
     print("\nreduce solar forcing in steps, each run to equilibrium:")
     print(f"{'solar':>7}{'global T':>11}{'CO2':>8}{'ice cover':>11}{'sea level':>11}")

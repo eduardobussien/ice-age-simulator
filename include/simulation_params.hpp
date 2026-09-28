@@ -42,7 +42,8 @@ struct Params {
     double melt_rate = 50.0;     // melt per degree above freezing (thickness/C/time)
     double ice_max = 3000.0;     // saturation ice thickness (~m)
 
-    // Sea level (derived from total land-ice volume).
+    // Sea level (derived from grounded ice: the land share, 1 - ocean_fraction,
+    // of the total ice volume; floating ice over the ocean does not count).
     double ocean_fraction = 0.71;      // ocean fraction of the surface
     double ice_density_ratio = 0.917;  // rho_ice / rho_water
 
