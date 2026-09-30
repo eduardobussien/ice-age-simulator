@@ -3,8 +3,9 @@
 A hybrid C++/Python climate simulator that models global cooling, continental
 ice-sheet growth, and the feedbacks that drive ice ages on a 2-D latitude x
 longitude grid. The physics is a **Budyko-Sellers energy-balance model** with
-published coefficients, so the present-day climate and the snowball tipping
-point come out realistic rather than arbitrary.
+coefficients from the published literature (one lightly tuned), so the
+present-day climate and the snowball tipping point come out realistic rather
+than arbitrary.
 
 - **C++ core** (`include/`, `src/`): Struct-of-Arrays climate state (`float64`)
   stepped over discrete time iterations.
@@ -24,20 +25,33 @@ solar_mult * (S0/4) * insol * (1 - albedo)      absorbed shortwave
     - co2_forcing * ln(CO2 / co2_base)           greenhouse forcing
 ```
 
-Published coefficients (S0 = 1361 W/m2, olr_a = 200, olr_b = 2.09,
-transport_c = 3.8, albedo 0.31 ice-free / 0.60 ice) give a realistic present
-day: **global 15 C, equator 25 C, pole -12 C, CO2 280 ppm**.
+The coefficients come from the literature: S0 = 1361 W/m2, olr_b = 2.09,
+transport_c = 3.8, albedo 0.31 ice-free / 0.60 ice. The one tuned value is
+olr_a = 200, lowered slightly from the commonly cited 203.3 so the baseline
+lands on Earth's ~15 C. Together they give a realistic present day:
+**global 15 C, equator 25 C, pole -12 C, CO2 280 ppm**.
 
-Three feedbacks are intrinsic to the balance (not bolted-on gains):
+Two feedbacks are built into the balance itself (not bolted-on gains):
 
-- **Ice-albedo** (local): ice raises albedo, cutting absorbed sunlight.
-- **Heat transport** (planetary): couples every cell to the global mean, so a
-  growing ice cap cools the whole world and advances its own margin.
-- **CO2 greenhouse**: cooling draws down well-mixed CO2, weakening the
-  greenhouse and cooling further.
+- **Ice-albedo**: ice is bright and reflects sunlight, which cools the surface,
+  which grows more ice.
+- **CO2 greenhouse**: colder oceans absorb more CO2, which weakens the
+  greenhouse effect, which cools further.
 
-The external driver is the **solar multiplier** (Milankovitch / solar forcing).
-Every coefficient lives in the `Params` struct and is settable from Python.
+They are linked by **heat transport**, which is a coupling rather than a
+feedback: every cell is pulled toward the global mean, so cooling in one place
+spreads to the rest of the planet. This is how a growing ice cap chills its own
+edge and advances.
+
+The external driver is the **solar multiplier**, a uniform brightening or
+dimming of the Sun. It is a simple stand-in: real orbital (Milankovitch)
+cycles mostly shift sunlight between latitudes and seasons, with little change
+to the global total. Every coefficient lives in the `Params` struct and is
+settable from Python.
+
+Time advances in abstract model steps, not years. The model is built to show
+where the climate settles for a given amount of sunlight, not how long the
+journey takes.
 
 ## Install
 
@@ -48,7 +62,8 @@ C++ extension builds automatically; scikit-build-core drives CMake.
 pip install .
 ```
 
-For an editable/development install (rebuilds on import when sources change):
+For an editable/development install (Python edits take effect immediately;
+re-run it after changing the C++ sources):
 
 ```bash
 pip install -e .

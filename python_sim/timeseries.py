@@ -72,7 +72,7 @@ def plot(data, path):
 
     axes[3].plot(data["t"], data["cover"], color="#6a51a3", lw=2)
     axes[3].set_ylabel("Ice cover (%)")
-    axes[3].set_xlabel("time (steps)")
+    axes[3].set_xlabel("time (model steps, not years)")
 
     for a in axes:
         a.grid(True, alpha=0.3)

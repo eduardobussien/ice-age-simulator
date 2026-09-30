@@ -11,11 +11,15 @@ namespace iceage {
 // Advances a ClimateGrid through discrete time steps of length params.dt using
 // a Budyko-Sellers energy balance (see simulation_params.hpp for the equation).
 //
-// Feedbacks are all intrinsic to the energy balance:
-//   * ice-albedo    - ice raises albedo, cutting absorbed shortwave (local),
-//   * heat transport - couples every cell to the global mean (planetary),
-//   * CO2 greenhouse - cooling draws down well-mixed CO2, weakening forcing.
-// The external driver is the solar multiplier (Milankovitch / solar forcing).
+// Two feedbacks are intrinsic to the energy balance, linked by one coupling:
+//   * ice-albedo     - ice raises albedo, cutting absorbed shortwave,
+//   * CO2 greenhouse - cooling draws down well-mixed CO2, weakening forcing,
+//   * heat transport - (a coupling, not a feedback) pulls every cell toward the
+//     global mean, spreading a local cooling planet-wide; this is how a growing
+//     ice cap chills its own margin and advances.
+// The external driver is the solar multiplier: a uniform change in the Sun's
+// output. Real orbital (Milankovitch) forcing instead shifts sunlight between
+// latitudes and seasons with little change to the global total.
 class SimulationEngine {
 public:
     explicit SimulationEngine(ClimateGrid& grid, const Params& params = Params{});

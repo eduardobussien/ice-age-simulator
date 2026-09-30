@@ -1,8 +1,8 @@
 """Animate the from-space ice caps growing over a run into a GIF.
 
 North-pole and South-pole orthographic hemispheres side by side, showing the
-ice caps spreading equatorward as a Milankovitch-style solar dimming pulls the
-planet toward a snowball.
+ice caps spreading equatorward as a slow dimming of the Sun pulls the planet
+toward a snowball.
 
 Note: the first run downloads Natural Earth coastline data (needs network);
 Cartopy caches it afterwards.

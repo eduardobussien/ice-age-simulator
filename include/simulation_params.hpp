@@ -4,8 +4,9 @@ namespace iceage {
 
 // Physical parameters for a Budyko-Sellers energy-balance climate model.
 //
-// Radiative terms are in W/m^2; the published coefficients reproduce realistic
-// present-day temperatures (global ~15 C, equator ~25 C, pole ~-13 C). The
+// Radiative terms are in W/m^2. Coefficients follow the published literature
+// (olr_a lightly tuned) and reproduce realistic present-day temperatures
+// (global ~15 C, equator ~25 C, pole ~-12 C). The
 // energy balance per cell is
 //
 //     solar_mult * (S0/4) * insol * (1 - albedo)          [absorbed shortwave]
@@ -18,7 +19,7 @@ namespace iceage {
 // an ad-hoc gain.
 struct Params {
     // Time integration.
-    double dt = 1.0;             // time step (abstract "cycle" units)
+    double dt = 1.0;             // time step (abstract model steps, not years)
     double relax_time = 5.0;     // timescale to approach radiative equilibrium
 
     // Shortwave / insolation.
@@ -26,8 +27,9 @@ struct Params {
     double solar_constant = 1361.0;  // solar constant S0 (W/m^2)
     double solar_mult = 1.0;         // fractional multiplier on S0 (forcing knob)
 
-    // Outgoing longwave radiation OLR = olr_a + olr_b * T (Budyko 1969 fit).
-    double olr_a = 200.0;        // (W/m^2); tuned within Budyko's range for ~15 C baseline
+    // Outgoing longwave radiation OLR = olr_a + olr_b * T (linear form from
+    // Budyko 1969; commonly cited values are olr_a = 203.3, olr_b = 2.09).
+    double olr_a = 200.0;        // (W/m^2); lowered from 203.3 so the baseline is ~15 C
     double olr_b = 2.09;         // (W/m^2 per C)
     double transport_c = 3.8;    // meridional heat-transport coefficient (W/m^2 per C)
 

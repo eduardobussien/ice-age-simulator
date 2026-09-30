@@ -41,7 +41,7 @@ def animate(path: str = "figures/ice_age.gif", frames: int = 60,
     engine.seed_equilibrium()
 
     T, Ice = grid.T, grid.ice
-    # Milankovitch-style forcing: slowly dim the Sun across the run.
+    # Forcing: slowly dim the whole Sun across the run.
     solar_schedule = np.linspace(solar_start, solar_end, frames)
 
     fig, (ax_t, ax_i) = plt.subplots(1, 2, figsize=(13, 4.6))

@@ -1,8 +1,8 @@
 """Animate a full simulation run on Cartopy globes into a GIF.
 
 The Robinson-projection version of `animate`: temperature and ice thickness on
-a real map with coastlines, while a Milankovitch-style solar dimming pulls the
-planet into a snowball.
+a real map with coastlines, while a slow dimming of the Sun pulls the planet
+into a snowball.
 
 Note: the first run downloads Natural Earth coastline data (needs network);
 Cartopy caches it afterwards.
