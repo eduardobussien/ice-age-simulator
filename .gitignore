@@ -24,6 +24,8 @@ _skbuild/
 # --- Generated figures ---
 /figures/
 *.png
+# ...except the curated README images (regenerate: python docs/make_images.py)
+!docs/images/*.png
 
 # --- IDE / OS ---
 .vscode/
