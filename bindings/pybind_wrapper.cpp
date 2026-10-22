@@ -120,6 +120,7 @@ PYBIND11_MODULE(_core, m) {
         .def_property_readonly("sea_level_drop", &SimulationEngine::sea_level_drop)
         .def_property_readonly("global_temperature", &SimulationEngine::global_temperature)
         .def_property_readonly("planetary_albedo", &SimulationEngine::planetary_albedo)
+        .def_property_readonly("open_water_fraction", &SimulationEngine::open_water_fraction)
         .def_property_readonly("co2", &SimulationEngine::co2)
         .def("__repr__", [](SimulationEngine& e) {
             std::ostringstream os;

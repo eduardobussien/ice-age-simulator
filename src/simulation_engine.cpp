@@ -101,6 +101,20 @@ double SimulationEngine::planetary_albedo() const noexcept {
     return area_weighted_mean(grid_.albedo());
 }
 
+double SimulationEngine::open_water_fraction() const noexcept {
+    // cell_albedo is linear in each cell's ice fraction, so the area-weighted
+    // planetary albedo gives the ice-covered share of the surface directly
+    // (thin ice counts partly, exactly as it does for albedo).
+    const double albedo_range = params_.ice_albedo - params_.base_albedo;
+    if (albedo_range <= 0.0) {
+        return 1.0;  // no albedo contrast, so ice cover cannot be inferred
+    }
+    double open = (params_.ice_albedo - planetary_albedo()) / albedo_range;
+    if (open < 0.0) open = 0.0;
+    else if (open > 1.0) open = 1.0;
+    return open;
+}
+
 double SimulationEngine::global_temperature() const noexcept {
     return area_weighted_mean(grid_.temperature());
 }
@@ -160,13 +174,20 @@ void SimulationEngine::step() {
 
     // --- CO2 greenhouse feedback (well-mixed global scalar) ---
     // Colder oceans dissolve more CO2, lowering the atmospheric equilibrium;
-    // CO2 relaxes toward it on a slow ocean timescale. Uses the previous step's
-    // global mean temperature (stable one-step lag).
+    // CO2 relaxes toward it on a slow ocean timescale. The exchange happens only
+    // through open water: sea ice caps the ocean, so the rate scales with the
+    // ice-free share of the surface and stops entirely once the ocean freezes
+    // over. Open seawater cannot be colder than its freezing point, so cooling
+    // below that cannot keep pulling CO2 into the ocean. Uses the previous
+    // step's fields (stable one-step lag).
     const double t_global = global_temperature();
+    const double t_ocean =
+        (t_global > params_.t_freeze) ? t_global : params_.t_freeze;
     double co2_eq = params_.co2_base +
-        params_.co2_solubility * (t_global - params_.co2_ref_temp);
+        params_.co2_solubility * (t_ocean - params_.co2_ref_temp);
     if (co2_eq < params_.co2_floor) co2_eq = params_.co2_floor;
-    const double k_co2 = 1.0 - std::exp(-params_.dt / params_.co2_relax_time);
+    const double k_co2 = open_water_fraction() *
+        (1.0 - std::exp(-params_.dt / params_.co2_relax_time));
     co2_ += (co2_eq - co2_) * k_co2;
     if (co2_ < params_.co2_floor) co2_ = params_.co2_floor;
     const double greenhouse_f = params_.co2_forcing * std::log(co2_ / params_.co2_base);

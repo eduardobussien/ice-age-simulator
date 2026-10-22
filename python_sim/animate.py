@@ -17,7 +17,7 @@ matplotlib.use("Agg")  # headless-safe: render frames without a display
 import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.animation import FuncAnimation, PillowWriter  # noqa: E402
 
-from python_sim import ClimateGrid, SimulationEngine, Params
+from python_sim import ClimateGrid, SimulationEngine, Params, settle
 
 
 def _panel(ax, field, title, cmap, label, vmin, vmax):
@@ -38,7 +38,8 @@ def animate(path: str = "figures/ice_age.gif", frames: int = 60,
     grid = ClimateGrid(90, 180)
     params = Params()
     engine = SimulationEngine(grid, params)
-    engine.seed_equilibrium()
+    engine.set_solar_mult(solar_start)
+    settle(engine)  # begin from the settled climate, not the ice-free seed
 
     T, Ice = grid.T, grid.ice
     # Forcing: slowly dim the whole Sun across the run.

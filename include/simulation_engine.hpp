@@ -46,6 +46,7 @@ public:
     double sea_level_drop() const noexcept;     // metres of global sea-level fall
     double global_temperature() const noexcept; // area-weighted mean surface T (C)
     double planetary_albedo() const noexcept;   // area-weighted mean albedo
+    double open_water_fraction() const noexcept; // ice-free share of surface (0..1)
     double co2() const noexcept { return co2_; } // well-mixed atmospheric CO2 (ppm)
 
 private:

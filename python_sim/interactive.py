@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider, Button
 from matplotlib.animation import FuncAnimation
 
-from python_sim import ClimateGrid, SimulationEngine, Params
+from python_sim import ClimateGrid, SimulationEngine, Params, settle
 
 
 def _area_weights(rows: int, cols: int) -> np.ndarray:
@@ -29,7 +29,7 @@ def build(rows: int = 90, cols: int = 180, steps_per_frame: int = 2):
     """Build the interactive figure. Returns (fig, update) for headless tests."""
     grid = ClimateGrid(rows, cols)
     engine = SimulationEngine(grid, Params())
-    engine.seed_equilibrium()
+    settle(engine)  # open on today's settled climate, not the ice-free seed
 
     T, Ice = grid.T, grid.ice
     weights = _area_weights(rows, cols)
@@ -64,8 +64,10 @@ def build(rows: int = 90, cols: int = 180, steps_per_frame: int = 2):
     button = Button(ax_reset, "Reset")
 
     def on_reset(_event):
-        engine.set_solar_mult(slider.val / 100.0)
-        engine.seed_equilibrium()
+        # Back to today's climate: full sunlight, settled from rest.
+        slider.set_val(100.0)
+        engine.set_solar_mult(1.0)
+        settle(engine)
 
     button.on_clicked(on_reset)
 

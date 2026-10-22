@@ -10,7 +10,7 @@ Run from the repo root once the extension is built:
 """
 import numpy as np
 
-from python_sim import ClimateGrid, SimulationEngine, Params, __version__
+from python_sim import ClimateGrid, SimulationEngine, Params, __version__, settle
 
 
 def area_weights(rows: int, cols: int) -> np.ndarray:
@@ -23,14 +23,11 @@ def main() -> None:
     rows, cols = 90, 180
     grid = ClimateGrid(rows, cols)
     engine = SimulationEngine(grid, Params())
-    engine.seed_equilibrium()
+    settle(engine)  # present-day equilibrium
 
     T, Ice = grid.T, grid.ice
     w = area_weights(rows, cols)
     w_sum = w.sum()
-
-    for _ in range(600):  # settle to present-day equilibrium
-        engine.step()
 
     print(f"core v{__version__}")
     print("present-day equilibrium (solar 100%):")

@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.animation import FuncAnimation, PillowWriter  # noqa: E402
 import cartopy.crs as ccrs  # noqa: E402
 
-from python_sim import ClimateGrid, SimulationEngine, Params
+from python_sim import ClimateGrid, SimulationEngine, Params, settle
 
 
 def _setup(fig, pos, data, central_lat, title, cmap, vmin, vmax):
@@ -49,7 +49,8 @@ def animate(path: str = "figures/ice_caps_polar.gif", frames: int = 60,
     grid = ClimateGrid(90, 180)
     params = Params()
     engine = SimulationEngine(grid, params)
-    engine.seed_equilibrium()
+    engine.set_solar_mult(solar_start)
+    settle(engine)  # begin from the settled climate, not the ice-free seed
 
     Ice = grid.ice
     solar_schedule = np.linspace(solar_start, solar_end, frames)

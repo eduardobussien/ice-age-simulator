@@ -18,7 +18,7 @@ import matplotlib
 matplotlib.use("Agg")  # headless-safe
 import matplotlib.pyplot as plt  # noqa: E402
 
-from python_sim import ClimateGrid, SimulationEngine, Params
+from python_sim import ClimateGrid, SimulationEngine, Params, settle
 
 
 def area_weights(rows: int, cols: int) -> np.ndarray:
@@ -30,7 +30,9 @@ def area_weights(rows: int, cols: int) -> np.ndarray:
 def run(steps: int = 800, solar_start: float = 1.0, solar_end: float = 0.90):
     grid = ClimateGrid(90, 180)
     engine = SimulationEngine(grid, Params())
-    engine.seed_equilibrium()
+    engine.set_solar_mult(solar_start)
+    settle(engine)  # begin from the settled climate, not the ice-free seed
+    t_start = engine.time  # report time from the start of the run
 
     Ice = grid.ice
     w = area_weights(90, 180)
@@ -41,7 +43,7 @@ def run(steps: int = 800, solar_start: float = 1.0, solar_end: float = 0.90):
     for i in range(steps):
         engine.set_solar_mult(float(schedule[i]))
         engine.step()
-        rec["t"].append(engine.time)
+        rec["t"].append(engine.time - t_start)
         rec["solar"].append(schedule[i] * 100.0)
         rec["gt"].append(engine.global_temperature)
         rec["co2"].append(engine.co2)

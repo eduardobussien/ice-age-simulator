@@ -261,6 +261,42 @@ def test_co2_draws_down_when_cold():
     assert e.co2 < e.params.co2_base
 
 
+def test_open_water_fraction_matches_ice_cover():
+    # The engine infers open water from the planetary albedo; cross-check it
+    # against the ice field directly, using the same partial-cover rule.
+    g, e = fresh()
+    run(e, 600)
+    p = e.params
+    ice_fraction = np.clip(np.asarray(g.ice) / p.ice_albedo_depth, 0.0, 1.0)
+    expected = 1.0 - np.average(ice_fraction, weights=weights())
+    assert e.open_water_fraction == pytest.approx(expected, abs=1e-3)
+    assert 0.0 < e.open_water_fraction < 1.0
+
+
+def test_co2_stops_changing_once_ocean_freezes_over():
+    # Sea ice blocks air-sea exchange, so a fully frozen ocean can no longer
+    # absorb CO2: the level must hold steady, well above the numerical floor.
+    _, e = fresh()
+    e.set_solar_mult(0.90)
+    run(e, 1500)
+    assert e.open_water_fraction == pytest.approx(0.0, abs=1e-9)
+    frozen_co2 = e.co2
+    run(e, 500)
+    assert e.co2 == pytest.approx(frozen_co2, rel=1e-12)
+
+
+def test_co2_never_below_freezing_point_equilibrium():
+    # Seawater cannot be colder than freezing, so however cold the planet gets,
+    # CO2 can fall no further than its equilibrium at the freezing point.
+    _, e = fresh()
+    p = e.params
+    floor = p.co2_base + p.co2_solubility * (p.t_freeze - p.co2_ref_temp)
+    for s in (0.96, 0.93, 0.90):
+        e.set_solar_mult(s)
+        run(e, 800)
+        assert e.co2 >= floor - 1e-9
+
+
 # --------------------------------------------------------------------------
 # Determinism and parameter plumbing
 # --------------------------------------------------------------------------
