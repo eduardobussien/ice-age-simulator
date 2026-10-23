@@ -2,7 +2,9 @@
 
 Opens a live window: drag the solar slider and watch the climate relax toward
 the new forcing. Push the Sun down a few percent and the ice runs away into a
-snowball; ease it back up to recover. Find the tipping point by hand.
+snowball. Find the tipping point by hand. Note that the ice is sticky: easing
+the Sun back up leaves much of it in place, and once the planet has snowballed
+even the slider's maximum cannot thaw it. Reset returns to today's climate.
 
 Needs an interactive Matplotlib backend (the desktop default), so run it
 directly rather than in a headless environment:

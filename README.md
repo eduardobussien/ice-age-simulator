@@ -19,6 +19,11 @@ drawn for orientation only; the model itself has no continents.*
 - Back in **1969**, Mikhail Budyko and William Sellers independently built
   simple climate models that predicted this kind of runaway freeze, long before
   the geological evidence for it was widely accepted.
+- The Sun was dimmer back then: standard models of how the Sun brightens over
+  time (Gough 1981) put it at about **94% of today's brightness**. That is
+  right where this model tips over, although the leading explanations point
+  to falling CO2 as the main trigger, with the fainter Sun leaving Earth
+  closer to the edge.
 - The real snowball ended because volcanoes kept pumping CO2 into the air.
   With the planet frozen, almost nothing removed it, so over millions of years
   the greenhouse effect grew strong enough to melt the ice.
@@ -64,8 +69,8 @@ before industrialization, and about 66 m of sea level locked up in the ice of
 Antarctica and Greenland.
 
 Now look at the last two rows. Going from 96% to 95% sunlight, the planet does
-not get a little colder. It collapses from a mild ice age into a frozen
-snowball. That sudden jump is a **tipping point**.
+not get a little colder. It collapses from a cold world, with ice reaching the
+mid-latitudes, into a frozen snowball. That sudden jump is a **tipping point**.
 
 ![Global temperature, CO2, sea level and ice cover as the Sun slowly dims](docs/images/timeseries.png)
 
@@ -108,10 +113,35 @@ pip install .
 python -m python_sim.interactive
 ```
 
-Push the Sun down toward 94% and watch the ice run away, then try to bring it
-back. (See [Install](#install) for compiler details.)
+Push the Sun down toward 94% and watch the ice run away. Then try to bring it
+back: you can't. Even the slider's maximum of 115% won't thaw a snowball (see
+why above). Press **Reset** to return to today's climate.
+
+Even before a snowball, the ice is stubborn. Dip the Sun to 96% and back to
+100%, and the planet stays several degrees colder than it started (about 9 C
+once it fully settles): ice that has grown keeps itself cold by reflecting
+sunlight. Real ice does this too, but less strongly than here (see the
+limitations below).
+
+(See [Install](#install) for compiler details.)
 
 Every other experiment is a one-line command too; see [Run](#run).
+
+## How realistic is it?
+
+A few independent checks:
+
+- **Today's Earth comes out right:** about 15 C on average, 280 ppm of CO2,
+  and 66 m of sea level stored in ice.
+- **Doubling CO2 warms it by 3.0 C.** The real-world best estimate is about
+  3 C (likely range 2.5 to 4 C, IPCC 2021), and the model was never tuned to
+  hit it.
+- **Energy is conserved exactly:** once the climate settles, the sunlight
+  absorbed equals the heat sent back to space.
+- **The answers come from the physics, not the setup:** they don't change with
+  the time step, and barely change with the grid size (within 0.2 C).
+- **Automated tests** check these properties on Linux, Windows and macOS after
+  every change.
 
 ## Honest limitations
 
@@ -120,6 +150,11 @@ A model this simple gets the big picture right but leaves a lot out:
 - **No continents.** The grid has no map of land and sea, so climate only
   varies with latitude. Results form bands, not realistic geography.
 - **Yearly averages.** There are no seasons and no day and night.
+- **Ice is too stubborn.** Once ice grows, it keeps itself cold by reflecting
+  sunlight, and here nothing breaks that loop: there are no summers to melt ice
+  edges, and heat only flows to and from the global average rather than in
+  from warm neighbouring regions. Real ice ages do end; in this model, a partly
+  frozen world barely retreats when the Sun brightens again.
 - **A simplified Sun.** The slider dims the whole Sun evenly. Real ice-age
   cycles (Milankovitch cycles) come from slow wobbles in Earth's orbit that
   shift *where and when* sunlight falls, with little change to the total.
@@ -162,7 +197,12 @@ lands on Earth's ~15 C.
 The ice-albedo and CO2 feedbacks are built into the balance itself (albedo
 enters the absorbed term, CO2 the greenhouse term) rather than bolted on as
 gains. Heat transport is a coupling rather than a feedback: it links them by
-spreading any local cooling planet-wide. The external driver is the solar
+spreading any local cooling planet-wide. CO2 is exchanged with the ocean only
+through open water (the rate scales with `open_water_fraction`), and the ocean
+temperature driving uptake is floored at freezing, so a frozen-over ocean
+holds CO2 fixed. Ice is a state variable with memory: it forms below `t_freeze`
+and melts only when the iced cell itself rises above it, which is what makes
+partial glaciations sticky. The external driver is the solar
 multiplier, a uniform brightening or dimming of the Sun. Time advances in
 abstract model steps, not years. Every coefficient lives in the `Params` struct
 and is settable from Python.
@@ -234,7 +274,8 @@ is git-ignored.
 
 A `pytest` suite in `tests/` locks in the physics: zero-copy bindings, the
 realistic present-day baseline (~15 C), the analytic energy balance, the
-sea-level formula and its physical bounds, and the snowball tipping behaviour.
+sea-level formula and its physical bounds, CO2's physical limits, runs starting
+from today's settled climate, and the snowball tipping behaviour.
 Build the extension first, then:
 
 ```bash

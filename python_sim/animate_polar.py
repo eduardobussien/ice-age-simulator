@@ -45,7 +45,7 @@ def _setup(fig, pos, data, central_lat, title, cmap, vmin, vmax):
 
 def animate(path: str = "figures/ice_caps_polar.gif", frames: int = 60,
             steps_per_frame: int = 8, fps: int = 12,
-            solar_start: float = 1.0, solar_end: float = 0.93) -> Path:
+            solar_start: float = 1.0, solar_end: float = 0.90) -> Path:
     grid = ClimateGrid(90, 180)
     params = Params()
     engine = SimulationEngine(grid, params)

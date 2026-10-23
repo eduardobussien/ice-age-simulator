@@ -53,7 +53,8 @@ struct Params {
     double co2_base = 280.0;      // reference / starting CO2 (ppm)
     double co2_forcing = 5.35;    // radiative forcing coefficient (W/m^2 per ln)
     double co2_ref_temp = 15.0;   // global temp at which CO2 == co2_base (C)
-    double co2_solubility = 10.0; // equilibrium CO2 shift per degree of global T (ppm/C)
+    double co2_solubility = 10.0; // equilibrium CO2 shift per degree of ocean T (ppm/C);
+                                  // ocean T = global mean, floored at t_freeze
     double co2_relax_time = 10.0; // ocean CO2 adjustment timescale (time units)
     double co2_floor = 10.0;      // minimum CO2 (ppm), keeps ln finite
 };
