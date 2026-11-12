@@ -4,11 +4,11 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "ice-age-simulator"
-version = "0.1.0"
+version = "0.2.0"
 description = "A Budyko-Sellers energy-balance ice-age climate simulator with a C++ core and zero-copy NumPy bindings."
 readme = "README.md"
 requires-python = ">=3.9"
-authors = [{ name = "Your Name" }]
+authors = [{ name = "Eduardo Bussien" }]
 keywords = ["climate", "energy-balance-model", "budyko-sellers", "pybind11", "simulation"]
 classifiers = [
     "Programming Language :: Python :: 3",

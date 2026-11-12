@@ -62,20 +62,23 @@ Each row is the climate the model settles into for a given amount of sunlight:
 | 100% (today) | 15 C | 280 ppm | 6% | -68 m |
 | 98% | 10 C | 231 ppm | 13% | -151 m |
 | 96% | 1.5 C | 145 ppm | 28% | -315 m |
-| **95%** | **-36 C** | **130 ppm** | **100%** | **-1124 m** |
+| **94%** | **-36 C** | **130 ppm** | **100%** | **-1124 m** |
 
-The first row matches the real Earth: about 15 C on average, 280 ppm of CO2
-before industrialization, and about 66 m of sea level locked up in the ice of
-Antarctica and Greenland.
+The first row is calibrated to the real Earth: about 15 C on average, 280 ppm
+of CO2 before industrialization, and about 66 m of sea level locked up in the
+ice of Antarctica and Greenland.
 
-Now look at the last two rows. Going from 96% to 95% sunlight, the planet does
+Now look at the last two rows. Going from 96% to 94% sunlight, the planet does
 not get a little colder. It collapses from a cold world, with ice reaching the
-mid-latitudes, into a frozen snowball. That sudden jump is a **tipping point**.
+mid-latitudes, into a frozen snowball. That sudden jump is a **tipping point**,
+and it sits at about 95% sunlight (between 94.6% and 95.3%, depending on how
+fine the grid is).
 
 ![Global temperature, CO2, sea level and ice cover as the Sun slowly dims](docs/images/timeseries.png)
 
 *The Sun dims at a steady rate (dashed line), but the climate does not respond
-steadily: it slides gently, then falls off a cliff.*
+steadily: it slides gently, then falls off a cliff at about 95%. The small
+steps on the way down are the ice edge advancing one grid row at a time.*
 
 ## Freezing is easy, thawing is hard
 
@@ -96,8 +99,8 @@ sunlight that a brighter Sun barely helps, which is why the real Snowball Earth
 needed a huge buildup of volcanic CO2 to escape.
 
 *This experiment holds CO2 fixed to isolate the effect of the ice, which is why
-it freezes at 93% rather than the 95% in the table above, where falling CO2
-helps tip it sooner.*
+it freezes at 93% rather than at about 95% as in the table above, where falling
+CO2 helps tip it sooner.*
 
 ## Watch it happen
 
@@ -129,17 +132,27 @@ Every other experiment is a one-line command too; see [Run](#run).
 
 ## How realistic is it?
 
-A few independent checks:
+A few checks, with their caveats:
 
-- **Today's Earth comes out right:** about 15 C on average, 280 ppm of CO2,
-  and 66 m of sea level stored in ice.
-- **Doubling CO2 warms it by 3.0 C.** The real-world best estimate is about
-  3 C (likely range 2.5 to 4 C, IPCC 2021), and the model was never tuned to
-  hit it.
+- **Today's Earth comes out right, by calibration:** about 15 C on average,
+  280 ppm of CO2, and 66 m of sea level stored in ice. These are set rather
+  than predicted: one coefficient is tuned for the 15 C, 280 ppm is the
+  model's reference point, and the maximum ice thickness fixes the sea level.
+- **Doubling CO2 warms it by about 2 to 3.5 C,** in the same range as the
+  real-world best estimate of about 3 C (likely range 2.5 to 4 C, IPCC 2021).
+  The exact figure depends on the ice: starting from today's climate it is
+  2.0 C, because the model's ice does not retreat (see the limitations below),
+  and 3.3 to 3.5 C when the run restarts from an ice-free planet so the ice
+  can settle afresh.
 - **Energy is conserved exactly:** once the climate settles, the sunlight
   absorbed equals the heat sent back to space.
-- **The answers come from the physics, not the setup:** they don't change with
-  the time step, and barely change with the grid size (within 0.2 C).
+- **The time step does not matter:** results are identical from a tenth of a
+  step to a hundred steps at a time.
+- **The grid size matters only in between.** Today's climate (within 0.2 C)
+  and the tipping point (94.6% to 95.3% sunlight) hold steady from 45 to 360
+  latitude rows. Partly frozen worlds are less certain: the ice edge moves one
+  grid row at a time, so the 96% row above is 1.5 C on the default grid but
+  ranges from 3.7 C to -0.8 C on coarser and finer ones.
 - **Automated tests** check these properties on Linux, Windows and macOS after
   every change.
 

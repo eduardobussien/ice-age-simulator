@@ -27,7 +27,11 @@ def area_weights(rows: int, cols: int) -> np.ndarray:
     return np.broadcast_to(np.cos(lat)[:, None], (rows, cols))
 
 
-def run(steps: int = 800, solar_start: float = 1.0, solar_end: float = 0.90):
+def run(steps: int = 12800, solar_start: float = 1.0, solar_end: float = 0.90):
+    # The ramp must be slow compared with the climate's own response, otherwise
+    # the planet lags the Sun and appears to tip later than it really does: an
+    # 800-step ramp tips near 93.2% sunlight, while the settled tipping point is
+    # about 95%. At 12800 steps the ramp tips at 94.9%.
     grid = ClimateGrid(90, 180)
     engine = SimulationEngine(grid, Params())
     engine.set_solar_mult(solar_start)

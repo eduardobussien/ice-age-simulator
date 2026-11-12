@@ -13,8 +13,10 @@ import pytest
 
 from python_sim import ClimateGrid, SimulationEngine, Params
 
-# Small grid: the physics is resolution-independent, so this keeps tests fast
-# while the calibration values (global ~15 C, etc.) still hold.
+# Small grid: keeps tests fast. The present-day calibration (global ~15 C) and
+# the snowball tipping point hold at this resolution; partly frozen states in
+# between shift by a few degrees with the row count, so tests avoid exact
+# values there.
 ROWS, COLS = 45, 90
 
 
