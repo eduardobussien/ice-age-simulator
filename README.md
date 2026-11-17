@@ -102,6 +102,32 @@ needed a huge buildup of volcanic CO2 to escape.
 it freezes at 93% rather than at about 95% as in the table above, where falling
 CO2 helps tip it sooner.*
 
+## How a snowball ends
+
+A frozen planet is not stuck forever, because volcanoes never stop. Switch on
+the model's long-term carbon cycle (volcanoes adding CO2, rock weathering
+removing it) and the whole story plays out under the faint Sun of 700 million
+years ago:
+
+![Temperature, CO2 and ice cover through a full Snowball Earth cycle](docs/images/snowball_cycle.png)
+
+1. **A thermostat.** Weathering slows down in the cold, so CO2 rises until it
+   balances the volcanoes again. At 94% sunlight, which freezes the planet in
+   the table above, the thermostat holds it at 8 C with 1300 ppm of CO2.
+2. **A cold snap.** The thermostat is slow. A short, sharp dimming outruns it
+   and the planet freezes over.
+3. **The snowball.** Under the ice, weathering stops but the volcanoes do not.
+   CO2 climbs for a very long time, to about 40,000 ppm (4% of the air).
+4. **Thaw and hothouse.** The greenhouse finally beats the ice, which melts
+   abruptly: from -5 C to 22 C almost at once. Weathering, now in overdrive,
+   then draws the CO2 back down and the climate settles at about 10 C.
+
+*Two settings differ from the rest of this page. Volcanoes are off by default,
+so the table and the hysteresis loop above show the planet without them. And
+this run uses darker, dustier ice (reflecting 50% of sunlight, not 60%): with
+the default ice the model's snowball cannot be thawed by any realistic amount
+of CO2. Real climate models have struggled with the same problem.*
+
 ## Watch it happen
 
 ![Animation of the polar ice caps spreading until the planet freezes](docs/images/ice_caps.gif)
@@ -173,9 +199,12 @@ A model this simple gets the big picture right but leaves a lot out:
   shift *where and when* sunlight falls, with little change to the total.
 - **Time is not in years.** The model shows where the climate settles, not
   how long the journey takes.
-- **No volcanoes.** CO2 only moves between the air and the open ocean, so once
-  the ocean freezes over it stays fixed. Unlike the real one, the model's
-  snowball never builds up enough CO2 to thaw by itself.
+- **Volcanoes are optional, and the thaw needs help.** By default CO2 only
+  moves between the air and the open ocean, so a frozen planet stays frozen.
+  With the volcanic carbon cycle on, CO2 does build up under the ice, but it
+  only melts the snowball if the ice is made darker than the default (see
+  "How a snowball ends"). The carbon cycle itself is a two-term sketch: a
+  constant volcanic source and one weathering formula.
 - **Sea level is estimated.** It assumes the land share of any ice-covered
   area equals Earth's overall land fraction (29%).
 
@@ -213,7 +242,11 @@ gains. Heat transport is a coupling rather than a feedback: it links them by
 spreading any local cooling planet-wide. CO2 is exchanged with the ocean only
 through open water (the rate scales with `open_water_fraction`), and the ocean
 temperature driving uptake is floored at freezing, so a frozen-over ocean
-holds CO2 fixed. Ice is a state variable with memory: it forms below `t_freeze`
+holds CO2 fixed. An optional long-term carbon cycle (`volcanic_rate`, off by
+default) adds a constant volcanic source and a silicate-weathering sink,
+`volcanic_rate * (ice_free / weathering_open_ref) * exp((T_global - co2_ref_temp) / weathering_temp_scale) * (CO2 / co2_base)^weathering_co2_exp`,
+which balance at the present-day climate and stop balancing once ice covers
+the ground. Ice is a state variable with memory: it forms below `t_freeze`
 and melts only when the iced cell itself rises above it, which is what makes
 partial glaciations sticky. The external driver is the solar
 multiplier, a uniform brightening or dimming of the Sun. Time advances in
@@ -270,6 +303,7 @@ All scripts run from the repo root once the extension is built.
 | `python -m python_sim.interactive` | Live window: drag the solar slider and watch the climate respond. Needs an interactive Matplotlib backend. |
 | `python -m python_sim.main` | Prints the present-day climate next to real-Earth values, then dims the Sun step by step to the snowball. |
 | `python -m python_sim.tipping` | The hysteresis experiment: sweeps sunlight down and back up and plots the loop. |
+| `python -m python_sim.snowball_cycle` | A full Snowball Earth cycle with volcanoes on: thermostat, freeze, CO2 build-up, thaw, recovery. |
 | `python -m python_sim.timeseries` | Slowly dims the Sun and plots temperature, CO2, sea level and ice cover over time. |
 | `python -m python_sim.visualizer` | Flat latitude/longitude snapshot (temperature, ice, albedo). Matplotlib only, no network. |
 | `python -m python_sim.geomap` | Snapshot on a Cartopy globe (Robinson projection) with coastlines. |
@@ -288,7 +322,8 @@ is git-ignored.
 A `pytest` suite in `tests/` locks in the physics: zero-copy bindings, the
 realistic present-day baseline (~15 C), the analytic energy balance, the
 sea-level formula and its physical bounds, CO2's physical limits, runs starting
-from today's settled climate, and the snowball tipping behaviour.
+from today's settled climate, the snowball tipping behaviour, and the volcanic
+carbon cycle (thermostat, build-up under ice, thaw and recovery).
 Build the extension first, then:
 
 ```bash
@@ -304,7 +339,7 @@ include/      simulation_params.hpp, simulation_engine.hpp, climate_grid.hpp
 src/          simulation_engine.cpp, climate_grid.cpp
 bindings/     pybind_wrapper.cpp   (zero-copy NumPy views)
 python_sim/   the Python package: interactive, main, tipping, timeseries,
-              visualizer, geomap, polar, animate, animate_globe, animate_polar
+              snowball_cycle, visualizer, geomap, polar, animate, animate_globe, animate_polar
 tests/        pytest suite
 docs/         make_images.py and the README images
 .github/      CI: build and test on Linux, Windows and macOS

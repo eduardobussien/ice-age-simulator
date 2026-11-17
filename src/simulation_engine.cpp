@@ -61,6 +61,7 @@ void SimulationEngine::init_state() {
 
     iteration_ = 0;
     co2_ = params_.co2_base;
+    carbon_ = params_.co2_base;
     for (std::size_t i = 0; i < n; ++i) {
         A[i] = params_.base_albedo;  // ice-free until ice accumulates
         C[i] = co2_;                 // well-mixed CO2 (uniform field)
@@ -117,6 +118,20 @@ double SimulationEngine::open_water_fraction() const noexcept {
 
 double SimulationEngine::global_temperature() const noexcept {
     return area_weighted_mean(grid_.temperature());
+}
+
+double SimulationEngine::weathering_ratio() const noexcept {
+    if (params_.weathering_open_ref <= 0.0 || params_.weathering_temp_scale <= 0.0 ||
+        params_.co2_base <= 0.0) {
+        return 0.0;
+    }
+    // Weathering needs liquid water on exposed ground, so it scales with the
+    // ice-free share of the surface; it speeds up when warm and when CO2 is high.
+    const double exposed = open_water_fraction() / params_.weathering_open_ref;
+    const double warmth = std::exp(
+        (global_temperature() - params_.co2_ref_temp) / params_.weathering_temp_scale);
+    const double acidity = std::pow(co2_ / params_.co2_base, params_.weathering_co2_exp);
+    return exposed * warmth * acidity;
 }
 
 double SimulationEngine::sea_level_drop() const noexcept {
@@ -181,9 +196,24 @@ void SimulationEngine::step() {
     // below that cannot keep pulling CO2 into the ocean. Uses the previous
     // step's fields (stable one-step lag).
     const double t_global = global_temperature();
+
+    // --- Long-term carbon cycle (optional; off when volcanic_rate is 0) ---
+    // Volcanoes add CO2 at a constant rate and silicate weathering removes it.
+    // The net change moves both the air and the long-term carbon level that the
+    // ocean equilibrates around, so CO2 released under a frozen ocean is still
+    // there when the ice goes. Removal is capped at half the CO2 present per
+    // step, which keeps the explicit update stable in a hot, CO2-rich climate.
+    if (params_.volcanic_rate > 0.0) {
+        double net = params_.volcanic_rate * (1.0 - weathering_ratio()) * params_.dt;
+        if (net < -0.5 * co2_) net = -0.5 * co2_;
+        co2_ += net;
+        carbon_ += net;
+        if (carbon_ < params_.co2_floor) carbon_ = params_.co2_floor;
+    }
+
     const double t_ocean =
         (t_global > params_.t_freeze) ? t_global : params_.t_freeze;
-    double co2_eq = params_.co2_base +
+    double co2_eq = carbon_ +
         params_.co2_solubility * (t_ocean - params_.co2_ref_temp);
     if (co2_eq < params_.co2_floor) co2_eq = params_.co2_floor;
     const double k_co2 = open_water_fraction() *

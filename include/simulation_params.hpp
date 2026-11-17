@@ -57,6 +57,20 @@ struct Params {
                                   // ocean T = global mean, floored at t_freeze
     double co2_relax_time = 10.0; // ocean CO2 adjustment timescale (time units)
     double co2_floor = 10.0;      // minimum CO2 (ppm), keeps ln finite
+
+    // Long-term carbon cycle: volcanic source and silicate-weathering sink.
+    // Off by default (volcanic_rate = 0), which leaves CO2 governed by the
+    // ocean exchange above. When on, volcanoes add CO2 at a constant rate and
+    // rock weathering removes it at
+    //     volcanic_rate * (ice_free / weathering_open_ref)
+    //                   * exp((T_global - co2_ref_temp) / weathering_temp_scale)
+    //                   * (CO2 / co2_base)^weathering_co2_exp
+    // so the two balance at the present-day climate. Weathering needs exposed,
+    // ice-free ground, so on a frozen planet it stops and CO2 builds up.
+    double volcanic_rate = 0.0;          // volcanic CO2 source (ppm per time); 0 = off
+    double weathering_temp_scale = 13.7; // e-folding temperature of weathering (C)
+    double weathering_co2_exp = 0.5;     // weathering dependence on CO2 (power law)
+    double weathering_open_ref = 0.94;   // ice-free share of today's settled climate
 };
 
 } // namespace iceage

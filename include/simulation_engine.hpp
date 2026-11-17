@@ -48,6 +48,13 @@ public:
     double planetary_albedo() const noexcept;   // area-weighted mean albedo
     double open_water_fraction() const noexcept; // ice-free share of surface (0..1)
     double co2() const noexcept { return co2_; } // well-mixed atmospheric CO2 (ppm)
+    // Long-term carbon level set by volcanoes and weathering: the CO2 the air
+    // would hold at the reference temperature (ppm). Stays at co2_base while
+    // volcanic_rate is 0.
+    double carbon_reservoir() const noexcept { return carbon_; }
+    // Weathering sink as a multiple of the volcanic source (1 = in balance,
+    // 0 = frozen over). Meaningful whether or not volcanoes are switched on.
+    double weathering_ratio() const noexcept;
 
 private:
     // Per-cell albedo as a function of ice thickness.
@@ -57,7 +64,7 @@ private:
     // Precompute per-row insolation / area-weight tables and the insolation
     // field. Derived from the parameters only; does not touch simulation state.
     void build_lat_tables();
-    // Reset the dynamic state to its ice-free base (iteration, CO2, albedo /
+    // Reset the dynamic state to its ice-free base (iteration, CO2, carbon, albedo /
     // CO2 fields). Called at construction and by seed_equilibrium, NOT by
     // set_params, so reconfiguring parameters mid-run preserves the run.
     void init_state();
@@ -66,6 +73,7 @@ private:
     Params params_;
     std::size_t iteration_ = 0;
     double co2_ = 280.0;              // well-mixed atmospheric CO2 (ppm)
+    double carbon_ = 280.0;           // long-term carbon level (ppm at co2_ref_temp)
     std::vector<double> row_insol_;   // insolation per row (size = rows)
     std::vector<double> row_weight_;  // cos(latitude) area weight per row (size = rows)
     double weight_sum_ = 0.0;         // sum of row_weight_ (per column)

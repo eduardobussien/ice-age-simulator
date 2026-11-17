@@ -91,6 +91,10 @@ PYBIND11_MODULE(_core, m) {
         .def_readwrite("co2_solubility", &Params::co2_solubility)
         .def_readwrite("co2_relax_time", &Params::co2_relax_time)
         .def_readwrite("co2_floor", &Params::co2_floor)
+        .def_readwrite("volcanic_rate", &Params::volcanic_rate)
+        .def_readwrite("weathering_temp_scale", &Params::weathering_temp_scale)
+        .def_readwrite("weathering_co2_exp", &Params::weathering_co2_exp)
+        .def_readwrite("weathering_open_ref", &Params::weathering_open_ref)
         .def("__repr__", [](const Params& p) {
             return "Params(solar_mult=" + std::to_string(p.solar_mult) +
                    ", solar_constant=" + std::to_string(p.solar_constant) +
@@ -122,6 +126,8 @@ PYBIND11_MODULE(_core, m) {
         .def_property_readonly("planetary_albedo", &SimulationEngine::planetary_albedo)
         .def_property_readonly("open_water_fraction", &SimulationEngine::open_water_fraction)
         .def_property_readonly("co2", &SimulationEngine::co2)
+        .def_property_readonly("carbon_reservoir", &SimulationEngine::carbon_reservoir)
+        .def_property_readonly("weathering_ratio", &SimulationEngine::weathering_ratio)
         .def("__repr__", [](SimulationEngine& e) {
             std::ostringstream os;
             os << std::fixed

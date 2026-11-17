@@ -20,7 +20,8 @@ sys.path.insert(0, str(REPO))  # a script in docs/ does not see the repo root
 import matplotlib  # noqa: E402
 matplotlib.use("Agg")
 
-from python_sim import animate_polar, polar, timeseries, tipping  # noqa: E402
+from python_sim import (animate_polar, polar, snowball_cycle,  # noqa: E402
+                        timeseries, tipping)
 
 OUT = REPO / "docs" / "images"
 FIGURES = REPO / "figures"
@@ -32,10 +33,12 @@ def main() -> None:
     polar._demo()        # ice caps from space at 96% sunlight
     tipping.main()       # the snowball hysteresis loop
     timeseries.main()    # the abrupt tip, over time
+    snowball_cycle.main()  # freeze, CO2 build-up, thaw, recovery
     for src, dst in (
         ("polar_ice.png", "ice_caps_from_space.png"),
         ("tipping_point.png", "tipping_point.png"),
         ("timeseries.png", "timeseries.png"),
+        ("snowball_cycle.png", "snowball_cycle.png"),
     ):
         shutil.copyfile(FIGURES / src, OUT / dst)
 
