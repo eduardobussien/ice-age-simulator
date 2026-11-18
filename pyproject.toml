@@ -8,6 +8,7 @@ version = "0.2.0"
 description = "A Budyko-Sellers energy-balance ice-age climate simulator with a C++ core and zero-copy NumPy bindings."
 readme = "README.md"
 requires-python = ">=3.9"
+license = { text = "MIT" }
 authors = [{ name = "Eduardo Bussien" }]
 keywords = ["climate", "energy-balance-model", "budyko-sellers", "pybind11", "simulation"]
 classifiers = [

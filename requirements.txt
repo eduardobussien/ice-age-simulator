@@ -1,9 +1,11 @@
 # Runtime + build dependencies for the Ice Age Simulator.
-# Build also requires a C++17 compiler (MSVC Build Tools on Windows) and CMake.
+# Build also requires a C++17 compiler: GCC or Clang on Linux/macOS; on Windows
+# either the MSVC Build Tools or MinGW-w64 GCC (see the README's Install section).
 
 # --- Build toolchain (Python side) ---
 pybind11>=2.12
 cmake>=3.18
+ninja           # the README's in-place build uses the Ninja generator
 
 # --- Simulation / analysis ---
 numpy>=1.24

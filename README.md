@@ -1,15 +1,48 @@
 # Ice Age Simulator
 
-**What happens to Earth if the Sun gets a little dimmer?**
+[![CI](https://github.com/eduardobussien/ice-age-simulator/actions/workflows/ci.yml/badge.svg)](https://github.com/eduardobussien/ice-age-simulator/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-This simulator answers that with real climate physics, and the answer is
-surprising: dimming the Sun by just a few percent can freeze the entire planet,
-and once it is frozen, it is extremely hard to thaw.
+![Animation of the polar ice caps spreading until the planet freezes](docs/images/ice_caps.gif)
 
-![The ice caps seen from above the North and South poles](docs/images/ice_caps_from_space.png)
+**What happens to Earth if the Sun gets a little dimmer?** Dimming it by just a
+few percent can freeze the entire planet, and once it is frozen, it is
+extremely hard to thaw.
 
-*Ice caps at 96% of today's sunlight, seen from above each pole. Coastlines are
-drawn for orientation only; the model itself has no continents.*
+This is a Snowball Earth simulator built on the classic Budyko-Sellers
+energy-balance climate model (1969), with ice-albedo and CO2 feedbacks and an
+optional volcanic carbon cycle. The physics runs in a **C++17 core**, exposed
+to Python through **pybind11** as zero-copy NumPy arrays, with **Matplotlib**
+and **Cartopy** for plots, animations and a live slider.
+
+> **What kind of model this is:** a **1-D latitude model**. Climate varies only
+> from pole to equator; there are **no continents**, no seasons, and no
+> longitude differences. The maps are drawn on a latitude x longitude grid for
+> display, but every longitude in a row is identical, and coastlines are drawn
+> for orientation only. See [Honest limitations](#honest-limitations).
+
+## Quick start
+
+You need Python 3.9+, CMake 3.18+ and a C++17 compiler (GCC, Clang, or MSVC).
+The C++ extension builds automatically during install.
+
+```bash
+git clone https://github.com/eduardobussien/ice-age-simulator.git
+cd ice-age-simulator
+pip install -e .
+python -m python_sim.interactive
+```
+
+Drag the slider to dim or brighten the Sun and watch the ice respond. Push it
+down toward 94% and the ice runs away into a snowball. Then try to bring it
+back: you can't, even at the slider's maximum of 115% (see
+[why](#freezing-is-easy-thawing-is-hard)). Press **Reset** to return to today's
+climate.
+
+Every other experiment is a one-line command too; see [Run](#run). For
+compiler details (including MinGW on Windows) see [Install](#install).
+
+---
 
 ## Earth has actually done this
 
@@ -33,9 +66,9 @@ This project is a modern, interactive version of those 1969 models.
 ## How it works, without equations
 
 Earth's temperature is a balance between **sunlight coming in** and **heat
-radiating back out to space**. The model splits the planet into a grid of
-90 x 180 cells and finds, for each one, the temperature where those two
-balance. Three ingredients make it interesting:
+radiating back out to space**. The model splits the planet into 90 latitude
+bands, from pole to pole, and finds, for each one, the temperature where those
+two balance. Three ingredients make it interesting:
 
 1. **Ice reflects sunlight.** In the model, ice reflects 60% of the sunlight
    that reaches it, compared with about 30% for an ice-free patch of planet.
@@ -52,6 +85,11 @@ balance. Three ingredients make it interesting:
 
 Turn the Sun down a little and those loops amplify it into something much
 bigger.
+
+![The ice caps seen from above the North and South poles](docs/images/ice_caps_from_space.png)
+
+*Ice caps at 96% of today's sunlight, seen from above each pole. Coastlines are
+drawn for orientation only; the model itself has no continents.*
 
 ## What happens
 
@@ -78,7 +116,7 @@ fine the grid is).
 
 *The Sun dims at a steady rate (dashed line), but the climate does not respond
 steadily: it slides gently, then falls off a cliff at about 95%. The small
-steps on the way down are the ice edge advancing one grid row at a time.*
+steps on the way down are the ice edge advancing one latitude band at a time.*
 
 ## Freezing is easy, thawing is hard
 
@@ -101,6 +139,12 @@ needed a huge buildup of volcanic CO2 to escape.
 *This experiment holds CO2 fixed to isolate the effect of the ice, which is why
 it freezes at 93% rather than at about 95% as in the table above, where falling
 CO2 helps tip it sooner.*
+
+Even before a snowball, the ice is stubborn. In the live explorer, dip the Sun
+to 96% and back to 100%, and the planet stays several degrees colder than it
+started (about 9 C once it fully settles): ice that has grown keeps itself cold
+by reflecting sunlight. Real ice does this too, but less strongly than here
+(see the limitations below).
 
 ## How a snowball ends
 
@@ -128,34 +172,6 @@ this run uses darker, dustier ice (reflecting 50% of sunlight, not 60%): with
 the default ice the model's snowball cannot be thawed by any realistic amount
 of CO2. Real climate models have struggled with the same problem.*
 
-## Watch it happen
-
-![Animation of the polar ice caps spreading until the planet freezes](docs/images/ice_caps.gif)
-
-## Try it yourself
-
-The most fun way in is the live explorer: drag a slider to dim or brighten the
-Sun and watch the ice respond in real time.
-
-```bash
-pip install .
-python -m python_sim.interactive
-```
-
-Push the Sun down toward 94% and watch the ice run away. Then try to bring it
-back: you can't. Even the slider's maximum of 115% won't thaw a snowball (see
-why above). Press **Reset** to return to today's climate.
-
-Even before a snowball, the ice is stubborn. Dip the Sun to 96% and back to
-100%, and the planet stays several degrees colder than it started (about 9 C
-once it fully settles): ice that has grown keeps itself cold by reflecting
-sunlight. Real ice does this too, but less strongly than here (see the
-limitations below).
-
-(See [Install](#install) for compiler details.)
-
-Every other experiment is a one-line command too; see [Run](#run).
-
 ## How realistic is it?
 
 A few checks, with their caveats:
@@ -176,8 +192,8 @@ A few checks, with their caveats:
   step to a hundred steps at a time.
 - **The grid size matters only in between.** Today's climate (within 0.2 C)
   and the tipping point (94.6% to 95.3% sunlight) hold steady from 45 to 360
-  latitude rows. Partly frozen worlds are less certain: the ice edge moves one
-  grid row at a time, so the 96% row above is 1.5 C on the default grid but
+  latitude bands. Partly frozen worlds are less certain: the ice edge moves one
+  band at a time, so the 96% row above is 1.5 C on the default grid but
   ranges from 3.7 C to -0.8 C on coarser and finer ones.
 - **Automated tests** check these properties on Linux, Windows and macOS after
   every change.
@@ -186,8 +202,10 @@ A few checks, with their caveats:
 
 A model this simple gets the big picture right but leaves a lot out:
 
-- **No continents.** The grid has no map of land and sea, so climate only
-  varies with latitude. Results form bands, not realistic geography.
+- **No continents, no longitude.** The grid has no map of land and sea, so
+  climate only varies with latitude. Results form bands, not realistic
+  geography. The longitude columns exist only for drawing maps; they are all
+  identical.
 - **Yearly averages.** There are no seasons and no day and night.
 - **Ice is too stubborn.** Once ice grows, it keeps itself cold by reflecting
   sunlight, and here nothing breaks that loop: there are no summers to melt ice
@@ -213,7 +231,8 @@ A model this simple gets the big picture right but leaves a lot out:
 ## For developers
 
 - **C++ core** (`include/`, `src/`): Struct-of-Arrays climate state (`float64`)
-  stepped over discrete time iterations.
+  on a 90 x 180 latitude x longitude grid, stepped over discrete time
+  iterations.
 - **pybind11 bindings** (`bindings/`): expose the grid buffers to Python as
   **zero-copy** NumPy arrays (no copies between the engine and the plots).
 - **Python layer** (`python_sim/`): run control, tunable parameters, and
@@ -236,6 +255,10 @@ transport_c = 3.8, albedo 0.31 ice-free / 0.60 ice. The one tuned value is
 olr_a = 200, lowered slightly from the commonly cited 203.3 so the baseline
 lands on Earth's ~15 C.
 
+Insolation depends only on latitude, so every cell in a latitude row follows
+the same equation from the same start and stays identical: the model is 1-D in
+practice.
+
 The ice-albedo and CO2 feedbacks are built into the balance itself (albedo
 enters the absorbed term, CO2 the greenhouse term) rather than bolted on as
 gains. Heat transport is a coupling rather than a feedback: it links them by
@@ -255,27 +278,34 @@ and is settable from Python.
 
 ### Install
 
-Prereqs: a C++17 compiler (MinGW GCC or MSVC), CMake 3.18+, Python 3.9+. The
-C++ extension builds automatically; scikit-build-core drives CMake.
+Prereqs: Python 3.9+, CMake 3.18+, and a C++17 compiler: GCC or Clang on Linux
+and macOS; on Windows either the **MSVC Build Tools** (Visual Studio's "Desktop
+development with C++" workload) or **MinGW-w64 GCC**. The C++ extension builds
+automatically; scikit-build-core drives CMake.
 
-```bash
-pip install .
-```
-
-For an editable/development install (Python edits take effect immediately;
-re-run it after changing the C++ sources):
+From the repo root, install in editable mode:
 
 ```bash
 pip install -e .
 ```
 
-On Windows with MinGW, force the Ninja generator so CMake uses GCC rather than
-looking for MSVC (PowerShell shown; use `set CMAKE_GENERATOR=Ninja` in cmd, or
-`export` in bash):
+This is the install to use if you want to run the scripts from the repo root.
+Python edits take effect immediately; re-run it after changing the C++ sources.
+
+A regular `pip install .` also works, but then run the scripts from **outside**
+the repo folder: inside it, Python finds the un-built `python_sim/` source
+folder first (it has no compiled `_core`) and fails with
+`No module named 'python_sim._core'`.
+
+**Windows with MSVC** needs nothing extra (this is what CI uses). **Windows with
+MinGW:** if CMake picks Visual Studio, or reports that it cannot find a
+compiler, force the Ninja generator so it uses GCC (PowerShell shown; use
+`set CMAKE_GENERATOR=Ninja` in cmd, or `export` in bash). On MinGW the C++
+runtime is linked statically, so the built module needs no extra DLLs.
 
 ```bash
 $env:CMAKE_GENERATOR="Ninja"
-pip install .
+pip install -e .
 ```
 
 ### Build from source (development)
@@ -290,13 +320,12 @@ cmake --build build --config Release
 ```
 
 pybind11 is discovered automatically from the active Python. The extension is
-emitted into `python_sim/` as `_core*.pyd`; on MinGW the C++ runtime is
-statically linked (handled in `CMakeLists.txt`), so the module is
-self-contained.
+emitted into `python_sim/` as `_core*.pyd` (`_core*.so` on Linux and macOS).
 
 ### Run
 
-All scripts run from the repo root once the extension is built.
+All scripts run from the repo root after `pip install -e .` (or the in-place
+build above).
 
 | Command | What it does |
 | --- | --- |
@@ -324,9 +353,10 @@ realistic present-day baseline (~15 C), the analytic energy balance, the
 sea-level formula and its physical bounds, CO2's physical limits, runs starting
 from today's settled climate, the snowball tipping behaviour, and the volcanic
 carbon cycle (thermostat, build-up under ice, thaw and recovery).
-Build the extension first, then:
+Install first (see above), then:
 
 ```bash
+pip install pytest
 python -m pytest tests/ -v
 ```
 
@@ -343,5 +373,9 @@ python_sim/   the Python package: interactive, main, tipping, timeseries,
 tests/        pytest suite
 docs/         make_images.py and the README images
 .github/      CI: build and test on Linux, Windows and macOS
-CMakeLists.txt, pyproject.toml, requirements.txt
+CMakeLists.txt, pyproject.toml, requirements.txt, LICENSE
 ```
+
+## License
+
+[MIT](LICENSE)
